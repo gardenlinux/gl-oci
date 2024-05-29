@@ -1,6 +1,5 @@
 # gl-oci: Tool to create OCI artefacts and publish OCI
 
-![example workflow](https://github.com/gardenlinux/gl-oci/actions/workflows/go.yml/badge.svg)
 
 **gl-oci** is a command line tool that implements functions to manage garden linux OCI artefacts. 
 
