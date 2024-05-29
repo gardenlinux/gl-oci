@@ -8,22 +8,9 @@ Features:
 - bootstrap OCI
 - incrementally add content to OCI 
 - build-in OCM support
+- simple implementation staying up-to-date with oras-cli
 
 
-## Build and install
-
-```
-go build
-go install
-
-```
-
-
-## Usage
-
-```
-gl-oci help
-```
 
 
 ## Related Projects
@@ -32,3 +19,7 @@ gl-oci help
   - key difference of gl-oci
       - ocm integration
       - API designed for Garden Linux use case: appending to existing images, so that multiple timely independent pipeline steps of Garden Linux can attach/append output to an existing OCI
+      - relies on oras-cli implementation, no maintanance to keep up with the spec and go libraries
+
+
+
