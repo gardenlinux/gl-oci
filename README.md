@@ -1,4 +1,5 @@
 # gl-oci: Tool to create OCI artefacts and publish OCI
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/gardenlinux/gl-oci/go)
 
 **gl-oci** is a command line tool that implements functions to manage garden linux OCI artefacts. 
 
