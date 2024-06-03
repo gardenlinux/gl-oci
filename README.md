@@ -1,24 +1,26 @@
 # gl-oci: Tool to create OCI artefacts and publish OCI
 
 
-**gl-oci** is a command line tool that implements functions to manage garden linux OCI artefacts. 
-
-Features:
-- bootstrap OCI
-- incrementally add content to OCI 
-- build-in OCM support
-- simple implementation staying up-to-date with oras-cli
+**gl-oci** is a command line tool that can be used to create OCI artefacts 
+for arbitrary data. 
+* Create manifests based on data and mediatypes defined in a simple  yaml files
+* Attach layers and annotations to existing manifests
 
 
 
+## Usage
 
-## Related Projects
-- https://github.com/ironcore-dev/ironcore-image
-  - similiar use case of creating images and pushing images to a registry
-  - key difference of gl-oci
-      - ocm integration
-      - API designed for Garden Linux use case: appending to existing images, so that multiple timely independent pipeline steps of Garden Linux can attach/append output to an existing OCI
-      - relies on oras-cli implementation, no maintanance to keep up with the spec and go libraries
+```
+python3 -m gl-oci.cli --help
+```
+ 
+Currently, this gl-oci tool is under development - but it is planed to properly package it
+and publish it to pypi. For now you need to checkout this repo and run it as described above.
+## Demo 
+```
+make create_venv
+source .venv/bin/activate
+make install_deps
+make example_manifest
 
-
-
+```
