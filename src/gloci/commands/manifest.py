@@ -1,7 +1,7 @@
 # my_project/commands/manifest.py
 
 import click
-from ..utils import get_config, save_config, parse_layer_file, create_oci_manifest
+from gloci.utils import get_config, save_config, parse_layer_file, create_oci_manifest
 
 @click.group()
 def manifest():

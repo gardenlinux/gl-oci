@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "gl-oci"
+version = "0.1.0"
+description = "Garden Linux OCI releases CLI"
+authors = ["Vincent Riesop <vincent.riesop@gmail.com>"]
+readme = "README.md"
+packages = [
+     { include = "gloci", from = "src" },
+]
+[tool.poetry.scripts]
+cli = "gloci.cli:cli"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+PyYAML = "^6.0.1"
+click = "^8.1.7"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

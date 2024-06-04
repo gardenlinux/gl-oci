@@ -6,15 +6,18 @@ import json
 
 CONFIG_FILE = 'config.ini'
 
+
 def get_config():
     config = configparser.ConfigParser()
     if os.path.exists(CONFIG_FILE):
         config.read(CONFIG_FILE)
     return config
 
+
 def save_config(config):
     with open(CONFIG_FILE, 'w') as configfile:
         config.write(configfile)
+
 
 def calculate_digest(file_path):
     """Calculate the SHA256 digest of a file."""
@@ -23,6 +26,7 @@ def calculate_digest(file_path):
         for chunk in iter(lambda: f.read(4096), b""):
             sha256.update(chunk)
     return f"sha256:{sha256.hexdigest()}"
+
 
 def parse_layer_file(layer_file_path):
     """Parse the layer YAML file and return a list of dictionaries with mediaType, size, and digest."""
@@ -41,9 +45,10 @@ def parse_layer_file(layer_file_path):
 
     return layers
 
+
 def create_oci_manifest(output, layer_file):
     layers = parse_layer_file(layer_file)
-    
+
     manifest = {
         "schemaVersion": 2,
         "mediaType": "application/vnd.oci.image.manifest.v1+json",
@@ -57,5 +62,3 @@ def create_oci_manifest(output, layer_file):
 
     with open(output, 'w') as f:
         json.dump(manifest, f, indent=4)
-
-

@@ -1,5 +1,5 @@
 import click
-from ..utils import get_config, save_config
+from gloci.utils import get_config, save_config
 
 @click.group()
 def remote():

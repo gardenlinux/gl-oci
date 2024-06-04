@@ -2,3 +2,5 @@ output
 .venv
 example.manifest.json
 *.pyc
+.idea
+dist
