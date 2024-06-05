@@ -6,16 +6,23 @@ for arbitrary data.
 * Create manifests based on data and mediatypes defined in a simple  yaml files
 * Attach layers and annotations to existing manifests
 
+## Setup
 
+```commandline
+make create_venv
+source .venv/bin/activate
 
-## Usage
-
+poetry install
+poetry build
+poetry run cli --help
 ```
-python3 -m gl-oci.cli --help
-```
+
  
 Currently, this gl-oci tool is under development - but it is planed to properly package it
-and publish it to pypi. For now you need to checkout this repo and run it as described above.
+and publish it to pypi. 
+
+For now, you need to check out this repo and run it as described above.
+
 ## Demo 
 ```
 make create_venv
