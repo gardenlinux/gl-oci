@@ -2,15 +2,16 @@
 
 import click
 
-from gloci.commands import manifest, remote
+from gloci.commands import image, remote, ocm
 
 @click.group()
 def cli():
     """My Project Command Line Interface"""
     pass
 
-cli.add_command(manifest.manifest)
+cli.add_command(image.image)
 cli.add_command(remote.remote)
+cli.add_command(ocm.ocm)
 
 
 
