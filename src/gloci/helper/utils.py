@@ -52,6 +52,27 @@ def parse_layer_file(layer_file_path):
     return layers
 
 
+def append_layer(manifest: dict, data_path: str) -> dict:
+    """Appends data to a manifest as a layer"""
+    with open(data_path, 'rb') as f:
+        content = f.read()
+        digest = f"sha256:{hashlib.sha256(content).hexdigest()}"
+        size = len(content)
+
+        layer_info = {
+            "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+            "digest": digest,
+            "size": size,
+            "annotations": {
+                "org.opencontainers.image.title": os.path.basename(data_path)
+            }
+        }
+
+        manifest["layers"].append(layer_info)
+
+    return manifest
+
+
 def create_oci_manifest(layers):
     manifest = {
         "schemaVersion": 2,
@@ -69,21 +90,7 @@ def create_oci_manifest(layers):
         if not os.path.isfile(layer):
             raise FileNotFoundError(f"File not found: {layer}")
 
-        with open(layer, 'rb') as f:
-            content = f.read()
-            digest = f"sha256:{hashlib.sha256(content).hexdigest()}"
-            size = len(content)
-
-            layer_info = {
-                "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
-                "digest": digest,
-                "size": size,
-                "annotations": {
-                    "org.opencontainers.image.title": os.path.basename(layer)
-                }
-            }
-
-            manifest["layers"].append(layer_info)
+        manifest = append_layer(manifest, layer)
 
     manifest["config"] = {}
     return manifest
