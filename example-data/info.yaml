@@ -1,0 +1,8 @@
+description:  "Example Data for gl-oci"
+type: platform
+features:
+  include: 
+    - cloud
+oci_layer:
+  - foo.bar
+  - test.log

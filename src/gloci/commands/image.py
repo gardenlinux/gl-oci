@@ -1,8 +1,10 @@
 # my_project/commands/image.py
 import click
+import yaml
+import os
+import json
 import oras.client
-from gloci.helper.utils import create_oci_manifest
-
+from gloci.helper.utils import create_oci_manifest, validate_yaml_syntax, read_layers_from_yaml
 
 @click.group()
 def image():
@@ -16,7 +18,14 @@ def image():
               help='info.yaml file of the Garden Linux flavor. The info.yaml specifies the data (layers) to expect to be attached later.')
 def create(output, info_yaml):
     """Bootstrap an image manifest"""
-    create_oci_manifest(output, info_yaml)
+
+    layers = read_layers_from_yaml(info_yaml)
+
+    click.echo(layers)
+    manifest = create_oci_manifest(layers)
+    with open(output, 'w') as f:
+        json.dump(manifest, f, indent=4)
+
     click.echo(f"Created manifest at {output}")
 
 
