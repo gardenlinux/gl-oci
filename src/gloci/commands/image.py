@@ -4,7 +4,7 @@ import yaml
 import os
 import json
 import oras.client
-from gloci.helper.utils import create_oci_manifest, validate_yaml_syntax, read_layers_from_yaml
+from gloci.helper.utils import create_oci_manifest, construct_local_artifact_paths
 
 @click.group()
 def image():
@@ -19,9 +19,10 @@ def image():
 def create(output, info_yaml):
     """Bootstrap an image manifest"""
 
-    layers = read_layers_from_yaml(info_yaml)
+    with open(info_yaml, 'r') as f:
+        info_data = yaml.safe_load(f)
+    layers = construct_local_artifact_paths(os.path.dirname(info_yaml), info_data)
 
-    click.echo(layers)
     manifest = create_oci_manifest(layers)
     with open(output, 'w') as f:
         json.dump(manifest, f, indent=4)

@@ -9,23 +9,8 @@ import json
 CONFIG_FILE = 'config.ini'
 
 
-def read_layers_from_yaml(yaml_file):
-    with open(yaml_file, 'r') as f:
-        data = yaml.safe_load(f)
-    base_path = os.path.dirname(yaml_file)
-    layers = data.get('oci_layer', [])
-    full_paths = [os.path.join(base_path, layer) for layer in layers]
-    return full_paths
-
-
-def validate_yaml_syntax(yaml_data):
-    try:
-        yaml.safe_load(yaml_data)
-        print(f"YAML data is valid.")
-        return True
-    except yaml.YAMLError as e:
-        print(f"YAML data is invalid: {e}")
-        return False
+def construct_local_artifact_paths(base_path, data):
+    return [os.path.join(base_path, artifact['file_name']) for artifact in data['oci_artifacts']]
 
 
 def get_config():

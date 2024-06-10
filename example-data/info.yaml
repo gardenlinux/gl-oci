@@ -3,6 +3,10 @@ type: platform
 features:
   include: 
     - cloud
-oci_layer:
-  - foo.bar
-  - test.log
+oci_artifacts:
+    - file_name: foo.bar
+      annotations:
+        - org.opencontainers.image.title: "Just some example Data"
+    - file_name: test.log
+      annotations:
+        - org.opencontainers.image.title: "Example Test log"
