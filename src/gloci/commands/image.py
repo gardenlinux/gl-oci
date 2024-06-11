@@ -4,7 +4,7 @@ import yaml
 import os
 import json
 import oras.client
-from gloci.helper.utils import create_oci_manifest, construct_local_artifact_paths, append_layer
+from gloci.oras.helper import construct_local_artifact_paths, append_layer, create_oci_manifest
 
 
 @click.group()
@@ -39,7 +39,7 @@ def create(output, info_yaml):
 @image.command()
 @click.option('--digest', required=True, type=click.Path(), help='Digest of the target oci manifest')
 @click.option('--data', required=True, type=click.Path(), help='file to attach to the manifest')
-def attach(input, data):
+def attach(digest, data):
     """Attach data to an existing image manifest"""
 
     # TODO: Create Connection to OCI Registry
@@ -50,7 +50,7 @@ def attach(input, data):
 
     # TODO: Check status of image. If final, abort with error that image is already final.
 
-    click.echo(f"Attached layer from {data} to manifest at {input}")
+    click.echo(f"Attached layer from {data} to manifest at {digest}")
 
 
 @image.command()

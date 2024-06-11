@@ -7,6 +7,9 @@ class OrasConnectionManager:
         self.token = token
         self.hostname = hostname
         self.client = None
+        self.config_path = None
+
+
 
     def connect(self):
         self.client = oras.client.OrasClient(hostname=self.hostname)
