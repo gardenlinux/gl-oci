@@ -20,16 +20,27 @@ class Registry(oras.provider.Registry):
         self.registry_url = registry_url
         self.config_path = config_path
 
-    def attach_layer(self, container, file_path):
+    def attach_layer(self, container, file_path, media_type):
 
-        c = self.get_container(container)
-        client = oras.client.OrasClient(insecure=True)
+        # File Blobs must exist
+        if not os.path.exists(file_path):
+            logger.exit(f"{file_path} does not exist.")
 
-        manifest = client.remote.get_manifest(container)
-        subject = oras.oci.Subject.from_manifest(manifest)
+        manifest = self.get_manifest(container)
 
-        c.ge
-        print(c)
+        # Create a new layer from the blob
+        layer = oras.oci.NewLayer(file_path, media_type, is_dir=False)
+        # annotations = annotations.get_annotations(blob)
+        layer["annotations"] = {oras.defaults.annotation_title: os.path.basename(file_path)}
+        # if annotations:
+        #    layer["annotations"].update(annotations)
+
+        # update the manifest with the new layer
+        manifest["layers"].append(layer)
+
+        self._check_200_response(self.upload_manifest(manifest, container))
+        print(f"Successfully attached {file_path} to {container}")
+
 
     @ensure_container
     def push(self, container, info_yaml):

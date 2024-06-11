@@ -27,12 +27,13 @@ def create(container, info_yaml):
 @image.command()
 @click.option('--container', required=True, type=click.Path(), help='container string e.g. ghcr.io/gardenlinux/gardenlinux:1337')
 @click.option('--file_path', required=True, type=click.Path(), help='file to attach to the manifest')
-def attach(container, file_path):
+@click.option('--media_type', required=True, type=click.Path(), help='mediatype of file')
+def attach(container, file_path, media_type):
     """Attach data to an existing image manifest"""
     container = oras.container.Container(container)
     registry = GlociRegistry(container.registry)
 
-    registry.attach_layer(container, file_path)
+    registry.attach_layer(container, file_path, media_type)
 
     click.echo(f"Attached {file_path} to {container}")
 
