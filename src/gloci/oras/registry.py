@@ -11,11 +11,54 @@ import os
 import sys
 import yaml
 import uuid
+import hashlib
 
 from oras.logger import setup_logger, logger
 
 setup_logger(quiet=False, debug=True)
 
+
+def calculate_sha1(file_path):
+    """Calculate the SHA1 checksum of a file."""
+    sha1_hash = hashlib.sha1()
+    try:
+        with open(file_path, "rb") as f:
+            # Read the file in chunks of 4KB
+            for byte_block in iter(lambda: f.read(4096), b""):
+                sha1_hash.update(byte_block)
+        # Return the hexadecimal digest of the checksum
+        return sha1_hash.hexdigest()
+    except FileNotFoundError:
+        print(f"File {file_path} not found.")
+        return None
+
+def calculate_md5(file_path):
+    """Calculate the MD5 checksum of a file."""
+    md5_hash = hashlib.md5()
+    try:
+        with open(file_path, "rb") as f:
+            # Read the file in chunks of 4KB
+            for byte_block in iter(lambda: f.read(4096), b""):
+                md5_hash.update(byte_block)
+        # Return the hexadecimal digest of the checksum
+        return md5_hash.hexdigest()
+    except FileNotFoundError:
+        print(f"File {file_path} not found.")
+        return None
+
+def calculate_sha256(file_path):
+    """Calculate the SHA256 checksum of a file."""
+    sha256_hash = hashlib.sha256()
+    try:
+        with open(file_path, "rb") as f:
+            # Read the file in chunks of 4KB
+            for byte_block in iter(lambda: f.read(4096), b""):
+                sha256_hash.update(byte_block)
+        # Return the hexadecimal digest of the checksum
+        return sha256_hash.hexdigest()
+    except FileNotFoundError:
+        print(f"File {file_path} not found.")
+        return None
 
 class Registry(oras.provider.Registry):
     def __init__(self, registry_url, config_path=None):
@@ -74,7 +117,9 @@ class Registry(oras.provider.Registry):
 
             # File Blobs must exist
             if not os.path.exists(file_path):
-                logger.exit(f"{file_path} does not exist.")
+                logger.info(f"{file_path} does not exist.")
+                # TODO: Set Status of manifest to incomplete layers
+                continue
 
             cleanup_blob = False
             if os.path.isdir(file_path):
@@ -84,7 +129,16 @@ class Registry(oras.provider.Registry):
             # Create a new layer from the blob
             layer = oras.oci.NewLayer(file_path, media_type, is_dir=cleanup_blob)
             # annotations = annotations.get_annotations(blob)
-            layer["annotations"] = {oras.defaults.annotation_title: file_name}
+            checksum_sha256 = calculate_sha256(file_path)
+            checksum_sha1 = calculate_sha1(file_path)
+            checksum_md5 = calculate_md5(file_path)
+            layer["annotations"] = {
+                oras.defaults.annotation_title: file_name,
+                "application/vnd.gardenlinux.image.checksum.sha256": checksum_sha256,
+                "application/vnd.gardenlinux.image.checksum.sha1": checksum_md5,
+                "application/vnd.gardenlinux.image.checksum.md5": checksum_md5,
+
+            }
             # if annotations:
             #    layer["annotations"].update(annotations)
 

@@ -7,10 +7,12 @@ import oras.client
 import oras.container
 from gloci.oras.registry import Registry as GlociRegistry
 
+
 @click.group()
 def image():
     """Manage images"""
     pass
+
 
 @image.command()
 @click.option('--container', required=True, type=click.Path(), help='Container Name')
@@ -21,6 +23,7 @@ def create(container, info_yaml):
     container = oras.container.Container(container)
     registry = GlociRegistry(container.registry)
     registry.push(container, info_yaml)
+
 
 @image.command()
 @click.option('--container', required=True, type=click.Path(), help='container string e.g. ghcr.io/gardenlinux/gardenlinux:1337')
