@@ -13,7 +13,9 @@ import yaml
 import uuid
 
 from oras.logger import setup_logger, logger
+
 setup_logger(quiet=False, debug=True)
+
 
 class Registry(oras.provider.Registry):
     def __init__(self, registry_url, config_path=None):
@@ -41,7 +43,6 @@ class Registry(oras.provider.Registry):
 
         self._check_200_response(self.upload_manifest(manifest, container))
         print(f"Successfully attached {file_path} to {container}")
-
 
     @ensure_container
     def push(self, container, info_yaml):
@@ -104,7 +105,7 @@ class Registry(oras.provider.Registry):
                 pass
 
         conf, _ = oras.oci.ManifestConfig(path=config_file)
-        # conf["annotations"] = {}
+        conf["annotations"] = {}
 
         # Config is just another layer blob!
         response = self.upload_blob(config_file, container, conf)
@@ -113,8 +114,6 @@ class Registry(oras.provider.Registry):
         os.remove(config_file)
         # Final upload of the manifest
         manifest["config"] = conf
-
-        print(manifest)
 
         self._check_200_response(self.upload_manifest(manifest, container))
         print(f"Successfully pushed {container}")
