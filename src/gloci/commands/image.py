@@ -4,8 +4,9 @@ import yaml
 import os
 import json
 import oras.client
+import oras.container
 from gloci.oras.helper import construct_local_artifact_paths, append_layer, create_oci_manifest
-
+from gloci.oras.registry import Registry as GlociRegistry
 
 @click.group()
 def image():
@@ -20,21 +21,9 @@ def image():
                    'be attached later.')
 def create(output, info_yaml):
     """Bootstrap an image manifest"""
-
-    with open(info_yaml, 'r') as f:
-        info_data = yaml.safe_load(f)
-    layers = construct_local_artifact_paths(os.path.dirname(info_yaml), info_data)
-
-    manifest = create_oci_manifest(layers)
-
-    # Attach info.yaml to manifest. This info.yaml specifies the layout of the manifest
-    #   The info.yaml specifies what layers to expect and how to annotate the
-    manifest = append_layer(manifest, info_yaml)
-    with open(output, 'w') as f:
-        json.dump(manifest, f, indent=4)
-
-    click.echo(f"Created manifest at {output}")
-
+    registry = GlociRegistry("http://localhost:8081")
+    container = oras.container.Container("yolo:v1", "localhost:8081")
+    registry.push(container, info_yaml)
 
 @image.command()
 @click.option('--digest', required=True, type=click.Path(), help='Digest of the target oci manifest')
