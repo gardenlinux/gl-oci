@@ -10,6 +10,7 @@ import oras.utils
 import os
 import sys
 import yaml
+import uuid
 
 from oras.logger import setup_logger, logger
 setup_logger(quiet=False, debug=True)
@@ -86,10 +87,8 @@ class Registry(oras.provider.Registry):
             # if annotations:
             #    layer["annotations"].update(annotations)
 
-
             # update the manifest with the new layer
             manifest["layers"].append(layer)
-
 
             # Upload the blob layer
             response = self.upload_blob(file_path, container, layer)
@@ -99,17 +98,19 @@ class Registry(oras.provider.Registry):
             if cleanup_blob and os.path.exists(file_path):
                 os.remove(file_path)
 
-        config_file = os.path.join(os.path.curdir, "tmp-config")
+        config_file = os.path.join(os.path.curdir, str(uuid.uuid4()))
         if not os.path.exists(config_file):
-            with open(config_file, 'w'): pass
+            with open(config_file, 'w'):
+                pass
 
         conf, _ = oras.oci.ManifestConfig(path=config_file)
-        #conf["annotations"] = {}
+        # conf["annotations"] = {}
 
         # Config is just another layer blob!
         response = self.upload_blob(config_file, container, conf)
         self._check_200_response(response)
 
+        os.remove(config_file)
         # Final upload of the manifest
         manifest["config"] = conf
 
