@@ -1,6 +1,0 @@
-layers:
-  - mediaType: text/plain
-    filePath: foo.bar
-  - mediaType: text/plain
-    filePath: test.log
-

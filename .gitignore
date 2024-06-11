@@ -4,3 +4,4 @@ example.manifest.json
 *.pyc
 .idea
 dist
+foobar.json

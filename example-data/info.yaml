@@ -1,0 +1,16 @@
+description:  "Example Data for gl-oci"
+type: platform
+features:
+  include: 
+    - cloud
+oci_artifacts:
+    - file_name: foo.bar
+      media_type: application/vnd.oci.image.layer.v1.tar+gzip
+      annotations:
+        org.opencontainers.image.title: "Just some example Data"
+        org.opencontainers.image.decription: "Just some example Data desc"
+    - file_name: test.log
+      media_type: application/vnd.oci.image.layer.v1.tar+gzip
+      annotations:
+        org.opencontainers.image.title: "Example Test log"
+        org.opencontainers.image.description: "Example Test log desc"

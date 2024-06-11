@@ -23,6 +23,31 @@ and publish it to pypi.
 
 For now, you need to check out this repo and run it as described above.
 
+
+## Workflow
+
+```
+- Build Pipeline builds Garden linux image artifacts
+- Create manifest based on Garden Linux info.yaml
+    - Create layers for all present image artifacts
+    - Create layer for info.yaml containing maintainer specific 
+    - set status of manifest
+
+for each additional Pipeline Step that produces additional artifacts:
+    - run pipeline
+    - attach additional layers
+
+- finalize manifest
+    - set status
+    - sign manifest
+``` 
+
+Incomplete manifests are uploaded to oci-registry with respective status.
+Final state can be verified by:
+- reading status annotation
+- verifying that signature exists and verifying if signature is valid
+
+
 ## Demo 
 ```
 make create_venv
