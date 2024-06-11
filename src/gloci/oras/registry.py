@@ -19,7 +19,7 @@ class Registry(oras.provider.Registry):
         self.registry_url = registry_url
         self.config_path = config_path
 
-    def attach_layer(self, list_of_files):
+    def attach_layer(self, container, file_path):
         layers = []
         for blob in list_of_files:
             layer = oras.oci.NewLayer(blob, is_dir=False, media_type="org.dinosaur.tools.blobish")
