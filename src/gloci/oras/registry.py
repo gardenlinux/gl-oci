@@ -4,6 +4,7 @@ import oras.provider
 import oras.oci
 import oras.defaults
 import oras.provider
+import oras.client
 from oras.decorator import ensure_container
 import oras.utils
 import os
@@ -20,16 +21,15 @@ class Registry(oras.provider.Registry):
         self.config_path = config_path
 
     def attach_layer(self, container, file_path):
-        layers = []
-        for blob in list_of_files:
-            layer = oras.oci.NewLayer(blob, is_dir=False, media_type="org.dinosaur.tools.blobish")
 
-            # This is important so oras clients can derive the relative name you want to download to
-            # Using basename assumes a flat directory of files - it doesn't have to be.
-            # You can add more annotations here!
-            layer["annotations"] = {oras.defaults.annotation_title: os.path.basename(blob)}
-            layers.append(layer)
-        return layers
+        c = self.get_container(container)
+        client = oras.client.OrasClient(insecure=True)
+
+        manifest = client.remote.get_manifest(container)
+        subject = oras.oci.Subject.from_manifest(manifest)
+
+        c.ge
+        print(c)
 
     @ensure_container
     def push(self, container, info_yaml):
@@ -46,10 +46,10 @@ class Registry(oras.provider.Registry):
         manifest = oras.oci.NewManifest()
 
         # First Layer is garden linux info.yaml
-     #   layer = oras.oci.NewLayer(info_yaml, "gardenlinux.metadata.info", is_dir=False)
-     #   manifest["layers"].append(layer)
-     #   response = self.upload_blob(info_yaml, container, layer)
-     #   self._check_200_response(response)
+        layer = oras.oci.NewLayer(info_yaml, "application/vnd.gardenlinux.metadata.info", is_dir=False)
+        manifest["layers"].append(layer)
+        response = self.upload_blob(info_yaml, container, layer)
+        self._check_200_response(response)
 
         # Iterate over oci_artifacts
         for artifact in info_data['oci_artifacts']:

@@ -32,6 +32,7 @@ def attach(container, file_path):
     container = oras.container.Container(container)
     registry = GlociRegistry(container.registry)
 
+    registry.attach_layer(container, file_path)
 
     click.echo(f"Attached {file_path} to {container}")
 
