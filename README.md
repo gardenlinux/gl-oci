@@ -5,6 +5,7 @@
 for arbitrary data. 
 * Create manifests based on data and mediatypes defined in a simple  yaml files
 * Attach layers and annotations to existing manifests
+* Status System (incomplete, complete, final) for all oci manifests 
 
 ## Setup
 
