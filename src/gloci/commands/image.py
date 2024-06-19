@@ -19,10 +19,18 @@ def image():
 @click.option('--info_yaml', required=True, type=click.Path(),
               help='info.yaml file of the Garden Linux flavor. The info.yaml specifies the data (layers) to expect to '
                    'be attached later.')
-def create(container, info_yaml):
+def push(container, info_yaml):
     container = oras.container.Container(container)
     registry = GlociRegistry(container.registry)
-    registry.push(container, info_yaml)
+
+    # TODO: Get CPU Architecture
+
+    # TODO: Get target GL Flavor
+
+    # TODO: Create image manifest
+
+    # Create and Push image manifest
+    registry.push_image_manifest(container, info_yaml)
 
 
 @image.command()

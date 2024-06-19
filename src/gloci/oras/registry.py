@@ -112,9 +112,9 @@ class Registry(oras.provider.Registry):
         manifest = self.get_manifest(container)
 
     @ensure_container
-    def push(self, container, info_yaml):
+    def push_image_manifest(self, container, info_yaml):
         """
-        Given a dict of layers (paths and corresponding mediaType) push.
+        creates and pushes an image manifest
         """
 
         with open(info_yaml, 'r') as f:
@@ -123,11 +123,11 @@ class Registry(oras.provider.Registry):
         conf, config_file = oras.oci.ManifestConfig()
 
         # Prepare a new manifest
-        manifest = oras.oci.NewManifest()
+        manifest_image = oras.oci.NewManifest()
 
         # First Layer is garden linux info.yaml
         layer = oras.oci.NewLayer(info_yaml, "application/vnd.gardenlinux.metadata.info", is_dir=False)
-        manifest["layers"].append(layer)
+        manifest_image["layers"].append(layer)
         response = self.upload_blob(info_yaml, container, layer)
         self._check_200_response(response)
 
