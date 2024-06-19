@@ -1,2 +1,4 @@
-click
-pyyaml
+click~=8.1.7
+pyyaml~=6.0.1
+
+oras~=0.1.30

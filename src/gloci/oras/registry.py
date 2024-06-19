@@ -1,21 +1,43 @@
-import oras.oci
-import oras.defaults
-import oras.provider
+import pprint
+
 import oras.oci
 import oras.defaults
 import oras.provider
 import oras.client
-from oras.decorator import ensure_container
 import oras.utils
+from oras.decorator import ensure_container
+from oras.logger import setup_logger, logger
+
 import os
 import yaml
 import uuid
-
-from oras.logger import setup_logger, logger
+import re
+from enum import Enum, auto
 
 from gloci.oras.crypto import calculate_sha1, calculate_md5, calculate_sha256
 
+
+class ManifestState(Enum):
+    Incomplete = auto()
+    Complete = auto()
+    Final = auto()
+
+
 setup_logger(quiet=False, debug=True)
+
+
+def get_uri_for_digest(uri, digest):
+    """
+    Given a URI for an image, return a URI for the related digest.
+
+    URI may be in any of the following forms:
+
+        ghcr.io/homebrew/core/hello
+        ghcr.io/homebrew/core/hello:2.10
+        ghcr.io/homebrew/core/hello@sha256:ff81...47a
+    """
+    base_uri = re.split(r"[@:]", uri, maxsplit=1)[0]
+    return f"{base_uri}@{digest}"
 
 
 class Registry(oras.provider.Registry):
@@ -23,6 +45,34 @@ class Registry(oras.provider.Registry):
         super().__init__(insecure=True)
         self.registry_url = registry_url
         self.config_path = config_path
+
+    @ensure_container
+    def get_image_index(self, container, allowed_media_type=None):
+        """
+        Get an image index as a manifest.
+
+        This is basically Registry.get_manifest with the following changes
+
+        - different default allowed_media_type
+        - no JSON schema validation
+        """
+        if not allowed_media_type:
+            default_image_index_media_type = "application/vnd.oci.image.index.v1+json"
+            allowed_media_type = [default_image_index_media_type]
+
+        headers = {"Accept": ";".join(allowed_media_type)}
+
+        manifest_url = f"{self.prefix}://{container.manifest_url()}"
+        response = self.do_request(manifest_url, "GET", headers=headers)
+        self._check_200_response(response)
+        manifest = response.json()
+        # this would be a good point to validate the schema of the manifest
+        # jsonschema.validate(manifest, schema=...)
+        return manifest
+
+    def get_index_manifest(self, container):
+        index_manifest = self.get_image_index(container)
+        return index_manifest
 
     def attach_layer(self, container, file_path, media_type):
 
@@ -45,6 +95,22 @@ class Registry(oras.provider.Registry):
         self._check_200_response(self.upload_manifest(manifest, container))
         print(f"Successfully attached {file_path} to {container}")
 
+
+    @ensure_container
+    def status_manifest(self, container, manifest_id):
+        pass
+    @ensure_container
+    def status_all(self, container):
+        """
+        Validate if container is valid
+        - all manifests require a info.yaml in the layers
+        - info.yaml needs to be signed (TODO)
+        - all layers listed in info.yaml must exist
+        - all mediatypes of layers listed in info.yaml must be set correctly
+        """
+
+        manifest = self.get_manifest(container)
+
     @ensure_container
     def push(self, container, info_yaml):
         """
@@ -65,6 +131,7 @@ class Registry(oras.provider.Registry):
         response = self.upload_blob(info_yaml, container, layer)
         self._check_200_response(response)
 
+        missing_layer_detected = False
         # Iterate over oci_artifacts
         for artifact in info_data['oci_artifacts']:
             file_name = artifact['file_name']
@@ -72,11 +139,11 @@ class Registry(oras.provider.Registry):
             annotations = artifact['annotations']
 
             file_path = os.path.join(base_path, artifact['file_name'])
-
             # File Blobs must exist
             if not os.path.exists(file_path):
                 logger.info(f"{file_path} does not exist.")
                 # TODO: Set Status of manifest to incomplete layers
+                missing_layer_detected = True
                 continue
 
             cleanup_blob = False

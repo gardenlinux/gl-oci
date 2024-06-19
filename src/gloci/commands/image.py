@@ -6,7 +6,7 @@ import json
 import oras.client
 import oras.container
 from gloci.oras.registry import Registry as GlociRegistry
-
+import pprint
 
 @click.group()
 def image():
@@ -40,11 +40,30 @@ def attach(container, file_path, media_type):
 
 
 @image.command()
-@click.option('--reference', required=True, help='oci image reference')
-def status(reference):
+@click.option('--container', required=True, help='oci image reference')
+def status(container):
     """Get status of image"""
-    click.echo(f"Requesting status of {reference}")
+    click.echo(f"Requesting status of {container}")
+    container = oras.container.Container(container)
+    registry = GlociRegistry(container.registry)
+    pprint.pprint(registry.status_all(container), compact=True)
 
+@image.command()
+@click.option('--container', required=True, help='oci image reference')
+def inspect(container):
+    """inspect container"""
+    container = oras.container.Container(container)
+    registry = GlociRegistry(container.registry)
+    pprint.pprint(registry.get_manifest(container), compact=True)
+
+
+@image.command()
+@click.option('--container', required=True, help='oci image reference')
+def inspect_index(container):
+    """inspects complete index"""
+    container = oras.container.Container(container)
+    registry = GlociRegistry(container.registry)
+    pprint.pprint(registry.get_index_manifest(container), compact=True)
 
 @image.command()
 def list():
