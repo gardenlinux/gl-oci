@@ -130,14 +130,16 @@ class Registry(oras.provider.Registry):
         layer = oras.oci.NewLayer(info_yaml, "application/vnd.gardenlinux.metadata.info", is_dir=False)
         manifest_image["layers"].append(layer)
 
-
         logger.debug("Upload metadata info Layer")
+        assert container is not None, "error: container is none"
+        assert layer is not None, "error: layer is none"
         response = self.upload_blob(info_yaml, container, layer)
+
         logger.debug("Check response from upload metadata info Layer")
         self._check_200_response(response)
 
         missing_layer_detected = False
-        # Iterate over oci_artifacts
+
         logger.debug("Iterate over all artifacts specified in info yaml...")
         for artifact in info_data['oci_artifacts']:
             logger.debug("Layer Info:")

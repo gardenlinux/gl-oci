@@ -2,9 +2,13 @@ ZOT_CONFIG_FILE := "./zot/config.json"
 VENV := .venv
 PYTHON := python3
 
-serve-oci-registry:
-	mkdir -p output/registry
-	podman run --rm -p 8081:8081 -v $(ZOT_CONFIG_FILE):/etc/zot/config.json -v ./output/registry:/tmp/zot ghcr.io/project-zot/zot-linux-arm64:latest
+
+serve-oci:
+	zot serve $(ZOT_CONFIG_FILE)
+
+#serve-oci-registry:
+#	mkdir -p output/registry
+#	podman run --rm -p 5000:8081 -v ./output/registry:/tmp/zot ghcr.io/project-zot/zot-linux-arm64:latest
 
 activate_venv:
 	@echo "To activate venv in your shell run:"
@@ -18,4 +22,4 @@ install_deps: ## Install dependencies.
 
 example:
 	@echo "Create example manifest"
-	$(PYTHON) -m gloci.cli image push --container examplecontainer:latest  --info_yaml example-data/info.yaml
+	$(PYTHON) -m gloci.cli image push --container localhost:8081/examplecontainer:latest  --info_yaml example-data/info.yaml
