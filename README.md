@@ -51,9 +51,12 @@ Final state can be verified by:
 
 ## Demo 
 ```
+# Prepare environment once
 make create_venv
 source .venv/bin/activate
 make install_deps
-make example_manifest
 
+# run example that creates an image and pushes it to zot oci
+make serve-oci
+make example
 ```
