@@ -61,7 +61,7 @@ class Registry(oras.provider.Registry):
             allowed_media_type = [default_image_index_media_type]
 
         headers = {"Accept": ";".join(allowed_media_type)}
-
+        logger.debug("get remote manifest")
         manifest_url = f"{self.prefix}://{container.manifest_url()}"
         response = self.do_request(manifest_url, "GET", headers=headers)
         self._check_200_response(response)
@@ -112,31 +112,43 @@ class Registry(oras.provider.Registry):
         manifest = self.get_manifest(container)
 
     @ensure_container
-    def push(self, container, info_yaml):
+    def push_image_manifest(self, container, info_yaml):
         """
-        Given a dict of layers (paths and corresponding mediaType) push.
+        creates and pushes an image manifest
         """
-
+        logger.debug("start push image manifest") 
+        assert info_yaml is not None, "error: info_yaml is None"
         with open(info_yaml, 'r') as f:
             info_data = yaml.safe_load(f)
             base_path = os.path.join(os.path.dirname(info_yaml))
         conf, config_file = oras.oci.ManifestConfig()
 
-        # Prepare a new manifest
-        manifest = oras.oci.NewManifest()
+        logger.debug("Creating new Manifest")
+        manifest_image = oras.oci.NewManifest()
 
-        # First Layer is garden linux info.yaml
+        logger.debug("Create metadata info Layer")
         layer = oras.oci.NewLayer(info_yaml, "application/vnd.gardenlinux.metadata.info", is_dir=False)
-        manifest["layers"].append(layer)
+        manifest_image["layers"].append(layer)
+
+        logger.debug("Upload metadata info Layer")
+        assert container is not None, "error: container is none"
+        assert layer is not None, "error: layer is none"
         response = self.upload_blob(info_yaml, container, layer)
+
+        logger.debug("Check response from upload metadata info Layer")
         self._check_200_response(response)
 
         missing_layer_detected = False
-        # Iterate over oci_artifacts
+
+        logger.debug("Iterate over all artifacts specified in info yaml...")
         for artifact in info_data['oci_artifacts']:
+            logger.debug("Layer Info:")
             file_name = artifact['file_name']
             media_type = artifact['media_type']
             annotations = artifact['annotations']
+            logger.debug(f"\tfilename:= {file_name}")
+            logger.debug(f"\tmediatype:= {media_type}")
+            logger.debug(f"\tannotations:= {annotations}")
 
             file_path = os.path.join(base_path, artifact['file_name'])
             # File Blobs must exist
@@ -168,7 +180,7 @@ class Registry(oras.provider.Registry):
                 layer["annotations"].update(annotations)
 
             # update the manifest with the new layer
-            manifest["layers"].append(layer)
+            manifest_image["layers"].append(layer)
 
             # Upload the blob layer
             response = self.upload_blob(file_path, container, layer)
@@ -192,8 +204,8 @@ class Registry(oras.provider.Registry):
 
         os.remove(config_file)
         # Final upload of the manifest
-        manifest["config"] = conf
+        manifest_image["config"] = conf
 
-        self._check_200_response(self.upload_manifest(manifest, container))
+        self._check_200_response(self.upload_manifest(manifest_image, container))
         print(f"Successfully pushed {container}")
         return response
