@@ -8,6 +8,7 @@ import oras.container
 from gloci.oras.registry import Registry as GlociRegistry
 import pprint
 
+
 @click.group()
 def image():
     """Manage images"""
