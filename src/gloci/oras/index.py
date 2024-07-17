@@ -9,6 +9,7 @@ platformProperties = {
     "os.version": {"type": "string"},
     "variant": {"type": "string"},
 }
+
 manifestMetaProperties = {
     "mediaType": {"type": "string"},
     "platform": {"type": "object", "properties": platformProperties},
@@ -34,3 +35,8 @@ index = {
     "properties": indexProperties,
     "additionalProperties": True,
 }
+
+
+
+
+

@@ -8,6 +8,9 @@ import oras.utils
 from oras.decorator import ensure_container
 from oras.logger import setup_logger, logger
 
+import jsonschema
+import requests
+
 import os
 import yaml
 import uuid
@@ -15,6 +18,7 @@ import re
 from enum import Enum, auto
 
 from gloci.oras.crypto import calculate_sha1, calculate_md5, calculate_sha256
+import gloci.oras.index
 
 
 class ManifestState(Enum):
@@ -109,8 +113,13 @@ class Registry(oras.provider.Registry):
         """
         manifest = self.get_manifest(container)
 
-    def NewIndex():
+    def upload_index(
+            self,
+            container: oras.container.Container,
+            index: dict
+    ) -> requests.Response:
         logger.debug("Create new OCI-Index")
+        jsonschema.validate(manifest, schema=)
 
     @ensure_container
     def push_image_manifest(self, container, info_yaml):
