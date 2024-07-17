@@ -109,6 +109,9 @@ class Registry(oras.provider.Registry):
         """
         manifest = self.get_manifest(container)
 
+    def NewIndex():
+        logger.debug("Create new OCI-Index")
+
     @ensure_container
     def push_image_manifest(self, container, info_yaml):
         """
@@ -127,10 +130,12 @@ class Registry(oras.provider.Registry):
 
         if image_index is None:
             logger.debug("Image Index does not exist, creating fresh image index")
+            image_index = dict()
+            image_index['schemaVersion'] = 2
+            image_index['mediaType'] = 'application/vnd.oci.image.index.v1+json'
+            image_index['manifests'] = []
         else:
-            
             logger.debug("Image Index does exist, using existing image index")
-
 
         logger.debug("Creating new Manifest")
         manifest_image = oras.oci.NewManifest()
@@ -216,5 +221,12 @@ class Registry(oras.provider.Registry):
         manifest_image["config"] = conf
 
         self._check_200_response(self.upload_manifest(manifest_image, container))
+
+        # attach Manifest to oci-index
+        manifest_index_metadata = dict
+        logger.debug(image_index)
+
+        self._check_200_response(self.upload_manifest(image_index, container))
+
         print(f"Successfully pushed {container}")
         return response
