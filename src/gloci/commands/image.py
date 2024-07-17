@@ -49,6 +49,11 @@ def attach(container, file_path, media_type):
 
 
 @image.command()
+def remove():
+    click.echo("Image removal not supported")
+
+
+@image.command()
 @click.option('--container', required=True, help='oci image reference')
 def status(container):
     """Get status of image"""

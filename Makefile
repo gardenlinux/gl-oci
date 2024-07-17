@@ -1,7 +1,7 @@
 ZOT_CONFIG_FILE := "./zot/config.json"
 VENV := .venv
 PYTHON := python3
-
+EXAMPLECONTAINERNAME := examplecontainer2
 
 serve-oci:
 	zot serve $(ZOT_CONFIG_FILE)
@@ -22,9 +22,9 @@ install_deps: ## Install dependencies.
 
 example:
 	@echo "Push first image..."
-	$(PYTHON) -m gloci.cli image push --container localhost:8081/examplecontainer:latest  --info_yaml example-data/info.yaml
+	$(PYTHON) -m gloci.cli image push --container localhost:8081/$(EXAMPLECONTAINERNAME):latest  --info_yaml example-data/info.yaml
 	@echo "Attach some file to image..."
-	$(PYTHON) -m gloci.cli image attach --container localhost:8081/examplecontainer:latest  --file_path config.ini --media_type application/vnd.oci.image.layer.v1.tar
+	$(PYTHON) -m gloci.cli image attach --container localhost:8081/$(EXAMPLECONTAINERNAME):latest  --file_path config.ini --media_type application/vnd.oci.image.layer.v1.tar
 	@echo "Inspect final oci image"
 	@echo "\n"
-	$(PYTHON) -m gloci.cli image inspect --container  localhost:8081/examplecontainer:latest
+	$(PYTHON) -m gloci.cli image inspect --container  localhost:8081/$(EXAMPLECONTAINERNAME):latest
