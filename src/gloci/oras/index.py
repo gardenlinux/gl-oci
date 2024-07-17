@@ -1,5 +1,7 @@
-schema_url = "http://json-schema.org/draft-07/schema"
+# for reference:
+#   https://json-schema.org/understanding-json-schema/reference/object
 
+schema_url = "http://json-schema.org/draft-07/schema"
 
 platformProperties = {
     "architecture": {"type": "string"},
@@ -7,11 +9,9 @@ platformProperties = {
     "os.version": {"type": "string"},
     "variant": {"type": "string"},
 }
-# TODO: add platform property type in json schema format
-#   See: https://json-schema.org/understanding-json-schema/reference/object
 manifestMetaProperties = {
     "mediaType": {"type": "string"},
-    "platform": {"type": "object", },
+    "platform": {"type": "object", "properties": platformProperties},
 }
 
 indexProperties = {
