@@ -66,8 +66,6 @@ class Registry(oras.provider.Registry):
         response = self.do_request(manifest_url, "GET", headers=headers)
         self._check_200_response(response)
         manifest = response.json()
-        # this would be a good point to validate the schema of the manifest
-        # jsonschema.validate(manifest, schema=...)
         return manifest
 
     def get_index_manifest(self, container):
