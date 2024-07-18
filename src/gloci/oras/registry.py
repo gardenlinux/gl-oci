@@ -81,7 +81,11 @@ class Registry(oras.provider.Registry):
         self.config_path = config_path
 
     @ensure_container
-    def get_image_index(self, container, allowed_media_type=None):
+    def get_manifest(self, container, allowed_media_type=None):
+        """
+        Returns the manifest for a container
+        Will return None if no result was found
+        """
         if not allowed_media_type:
             default_image_index_media_type = "application/vnd.oci.image.index.v1+json"
             allowed_media_type = [default_image_index_media_type]
@@ -94,13 +98,10 @@ class Registry(oras.provider.Registry):
         try:
             self._check_200_response(response)
             manifest = response.json()
-
-            if manifest['mediaType'] == allowed_media_type:
-                return manifest
+            return manifest
         except ValueError:
             logger.debug("Index not found")
             return None
-        return None
 
     def attach_layer(self, container, file_path, media_type):
 
@@ -156,13 +157,34 @@ class Registry(oras.provider.Registry):
         }
         tag = container.digest or container.tag
 
-        index_url = f"{container.registry}/v2/{container.api_prefix}/index/{tag}"
+        logger.debug("Sending request to oci API")
+        index_url = f"{container.registry}/v2/{container.api_prefix}/manifests/{tag}"
         return self.do_request(
             f"{self.prefix}://{index_url}",  # noqa
             "PUT",
             headers=headers,
             json=index,
         )
+
+    def _get_index(self, container):
+        """
+        Ensures an oci index exists for the container, and returns it
+        """
+        image_index = self.get_manifest(
+                        container,
+                        allowed_media_type="application/vnd.oci.image.index.v1+json")
+
+        if image_index is None:
+            logger.debug("Image Index does not exist, creating fresh image index")
+            image_index = NewIndex()
+            jsonschema.validate(image_index, schema=indexSchema)
+            response = self.upload_index(image_index, container)
+            self._check_200_response(response)
+        else:
+            logger.debug("Image Index does exist, using existing image index")
+
+        return image_index
+
 
     @ensure_container
     def push_image_manifest(self, container, info_yaml):
@@ -176,15 +198,7 @@ class Registry(oras.provider.Registry):
             base_path = os.path.join(os.path.dirname(info_yaml))
         conf, config_file = oras.oci.ManifestConfig()
 
-        logger.debug("Checking if index needs to be created, or manifest can be attached")
-
-        image_index = self.get_image_index(container)
-
-        if image_index is None:
-            logger.debug("Image Index does not exist, creating fresh image index")
-            image_index = NewIndex()
-        else:
-            logger.debug("Image Index does exist, using existing image index")
+        image_index = self._get_index(container)
 
         logger.debug("Creating new Manifest")
         manifest_image = oras.oci.NewManifest()
@@ -269,8 +283,8 @@ class Registry(oras.provider.Registry):
         # Final upload of the manifest
         manifest_image["config"] = conf
 
-        self._check_200_response(
-                self.upload_manifest(manifest_image, container))
+        #self._check_200_response(
+        #        self.upload_manifest(manifest_image, container))
 
         # attach Manifest to oci-index
         manifest_index_metadata = NewManifestMetadata()
@@ -280,10 +294,10 @@ class Registry(oras.provider.Registry):
         manifest_index_metadata['annotations'] = {}
         manifest_index_metadata['artifactType'] = ""
 
-        image_index['manifests'].append(manifest_index_metadata)
+        #image_index['manifests'].append(manifest_index_metadata)
         logger.debug(image_index)
-
-        self._check_200_response(self.upload_index(image_index, container))
-
+        jsonschema.validate(image_index, schema=indexSchema)
+        response = self.upload_index(image_index, container)
+        self._check_200_response(response)
         print(f"Successfully pushed {container}")
         return response
