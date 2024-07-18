@@ -47,7 +47,7 @@ HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
 BODY=$(echo "$RESPONSE" | sed '$d')
 echo "---------"
 echo "HTTP Status Code: $HTTP_CODE"
-echo "$BODY"
+echo "$BODY" | jq .[]
 echo "---------"
 
 
