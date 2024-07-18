@@ -12,6 +12,7 @@ import jsonschema
 import requests
 
 import os
+import copy
 import yaml
 import uuid
 import re
@@ -20,6 +21,20 @@ from enum import Enum, auto
 from gloci.oras.crypto import calculate_sha1, calculate_md5, calculate_sha256
 from gloci.oras.schemas import index as indexSchema
 
+EmptyManifestMetadata = {
+    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+    "digest": "",
+    "size": 0,
+    "annotations": {},
+    "artifactType": "",
+}
+
+EmptyIndex = {
+    "schemaVersion": 2,
+    "mediaType": "application/vnd.oci.image.index.v1+json",
+    "manifests": [],
+    "annotations": {},
+}
 
 
 class ManifestState(Enum):
@@ -43,6 +58,20 @@ def get_uri_for_digest(uri, digest):
     """
     base_uri = re.split(r"[@:]", uri, maxsplit=1)[0]
     return f"{base_uri}@{digest}"
+
+
+def NewManifestMetadata() -> dict:
+    """
+    Get an empty oci index
+    """
+    return copy.deepcopy(EmptyManifestMetadata)
+
+
+def NewIndex() -> dict:
+    """
+    Get an empty oci index
+    """
+    return copy.deepcopy(EmptyIndex)
 
 
 class Registry(oras.provider.Registry):
@@ -116,8 +145,8 @@ class Registry(oras.provider.Registry):
 
     def upload_index(
             self,
-            container: oras.container.Container,
-            index: dict
+            index: dict,
+            container: oras.container.Container
     ) -> requests.Response:
         logger.debug("Create new OCI-Index")
         jsonschema.validate(index, schema=indexSchema)
@@ -125,8 +154,11 @@ class Registry(oras.provider.Registry):
             "Content-Type": "application/vnd.oci.image.index.v1+json",
             "Content-Length": str(len(index)),
         }
+        tag = container.digest or container.tag
+
+        index_url = f"{container.registry}/v2/{container.api_prefix}/index/{tag}"
         return self.do_request(
-            f"{self.prefix}://{container.manifest_url()}",  # noqa
+            f"{self.prefix}://{index_url}",  # noqa
             "PUT",
             headers=headers,
             json=index,
@@ -150,10 +182,7 @@ class Registry(oras.provider.Registry):
 
         if image_index is None:
             logger.debug("Image Index does not exist, creating fresh image index")
-            image_index = dict()
-            image_index['schemaVersion'] = 2
-            image_index['mediaType'] = 'application/vnd.oci.image.index.v1+json'
-            image_index['manifests'] = []
+            image_index = NewIndex()
         else:
             logger.debug("Image Index does exist, using existing image index")
 
@@ -240,13 +269,21 @@ class Registry(oras.provider.Registry):
         # Final upload of the manifest
         manifest_image["config"] = conf
 
-        self._check_200_response(self.upload_manifest(manifest_image, container))
+        self._check_200_response(
+                self.upload_manifest(manifest_image, container))
 
         # attach Manifest to oci-index
-        manifest_index_metadata = dict
+        manifest_index_metadata = NewManifestMetadata()
+        manifest_index_metadata['mediaType'] = "application/vnd.oci.image.manifest.v1+json"
+        manifest_index_metadata['digest'] = 0
+        manifest_index_metadata['size'] = 0
+        manifest_index_metadata['annotations'] = {}
+        manifest_index_metadata['artifactType'] = ""
+
+        image_index['manifests'].append(manifest_index_metadata)
         logger.debug(image_index)
 
-        self._check_200_response(self.upload_manifest(image_index, container))
+        self._check_200_response(self.upload_index(image_index, container))
 
         print(f"Successfully pushed {container}")
         return response
