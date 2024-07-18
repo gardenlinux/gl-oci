@@ -18,7 +18,8 @@ import re
 from enum import Enum, auto
 
 from gloci.oras.crypto import calculate_sha1, calculate_md5, calculate_sha256
-import gloci.oras.index
+from gloci.oras.schemas import index as indexSchema
+
 
 
 class ManifestState(Enum):
@@ -119,7 +120,17 @@ class Registry(oras.provider.Registry):
             index: dict
     ) -> requests.Response:
         logger.debug("Create new OCI-Index")
-        jsonschema.validate(manifest, schema=)
+        jsonschema.validate(index, schema=indexSchema)
+        headers = {
+            "Content-Type": "application/vnd.oci.image.index.v1+json",
+            "Content-Length": str(len(index)),
+        }
+        return self.do_request(
+            f"{self.prefix}://{container.manifest_url()}",  # noqa
+            "PUT",
+            headers=headers,
+            json=index,
+        )
 
     @ensure_container
     def push_image_manifest(self, container, info_yaml):
