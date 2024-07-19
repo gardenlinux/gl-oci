@@ -20,6 +20,11 @@ from enum import Enum, auto
 
 from gloci.oras.crypto import calculate_sha1, calculate_md5, calculate_sha256
 from gloci.oras.schemas import index as indexSchema
+EmptyPlatform = {
+    "architecture": "",
+    "os": "gardenlinux",
+    "os.version": "experimental",
+}
 
 EmptyManifestMetadata = {
     "mediaType": "application/vnd.oci.image.manifest.v1+json",
@@ -58,6 +63,13 @@ def get_uri_for_digest(uri, digest):
     """
     base_uri = re.split(r"[@:]", uri, maxsplit=1)[0]
     return f"{base_uri}@{digest}"
+
+
+def NewPlatform() -> dict:
+    """
+    Get an empty oci index
+    """
+    return copy.deepcopy(EmptyPlatform)
 
 
 def NewManifestMetadata() -> dict:
@@ -293,7 +305,7 @@ class Registry(oras.provider.Registry):
         manifest_index_metadata['size'] = 0
         manifest_index_metadata['annotations'] = {}
         # TODO: fill in Platform details based on input or defaults
-        manifest_index_metadata['platform'] = {}
+        manifest_index_metadata['platform'] = NewPlatform()
         manifest_index_metadata['artifactType'] = ""
 
         image_index['manifests'].append(manifest_index_metadata)
