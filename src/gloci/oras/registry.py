@@ -66,23 +66,14 @@ def get_uri_for_digest(uri, digest):
 
 
 def NewPlatform() -> dict:
-    """
-    Get an empty oci index
-    """
     return copy.deepcopy(EmptyPlatform)
 
 
 def NewManifestMetadata() -> dict:
-    """
-    Get an empty oci index
-    """
     return copy.deepcopy(EmptyManifestMetadata)
 
 
 def NewIndex() -> dict:
-    """
-    Get an empty oci index
-    """
     return copy.deepcopy(EmptyIndex)
 
 
