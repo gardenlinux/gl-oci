@@ -289,12 +289,15 @@ class Registry(oras.provider.Registry):
         # attach Manifest to oci-index
         manifest_index_metadata = NewManifestMetadata()
         manifest_index_metadata['mediaType'] = "application/vnd.oci.image.manifest.v1+json"
-        manifest_index_metadata['digest'] = 0
+        manifest_index_metadata['digest'] = f"sha256:{checksum_sha256}"
         manifest_index_metadata['size'] = 0
         manifest_index_metadata['annotations'] = {}
+        # TODO: fill in Platform details based on input or defaults
+        manifest_index_metadata['platform'] = {}
         manifest_index_metadata['artifactType'] = ""
 
-        #image_index['manifests'].append(manifest_index_metadata)
+        image_index['manifests'].append(manifest_index_metadata)
+        logger.debug("Show Image Index")
         logger.debug(image_index)
         jsonschema.validate(image_index, schema=indexSchema)
         response = self.upload_index(image_index, container)
