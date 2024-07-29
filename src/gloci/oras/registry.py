@@ -86,9 +86,9 @@ class Registry(oras.provider.Registry):
         self.config_path = config_path
 
     @ensure_container
-    def get_manifest(self, container, allowed_media_type=None):
+    def get_index(self, container, allowed_media_type=None):
         """
-        Returns the manifest for a container
+        Returns the manifest for a cname+arch combination of a container
         Will return None if no result was found
         """
         if not allowed_media_type:
@@ -96,25 +96,58 @@ class Registry(oras.provider.Registry):
             allowed_media_type = [default_image_index_media_type]
 
         headers = {"Accept": ";".join(allowed_media_type)}
-        logger.debug("get remote manifest")
+        logger.debug("get remote index")
         manifest_url = f"{self.prefix}://{container.manifest_url()}"
         response = self.do_request(manifest_url, "GET", headers=headers)
         logger.debug("validating response")
         try:
             self._check_200_response(response)
-            manifest = response.json()
-            return manifest
+            index = response.json()
+            return index
+
         except ValueError:
             logger.debug("Index not found")
             return None
 
-    def attach_layer(self, container, file_path, media_type):
+    @ensure_container
+    def get_manifest(self, container, cname, arch, allowed_media_type=None):
+        """
+        Returns the manifest for a cname+arch combination of a container
+        Will return None if no result was found
+        """
+        index = self.get_index(container, allowed_media_type)
+
+        if index['manifests'] is None:
+            logger.debug("Index is empty")
+            return None
+
+        for manifest in index['manifests']:
+            logger.debug(manifest)
+            if 'annotations' not in manifest:
+                logger.debug("Manifest annotations was none, which is invalid")
+                return None
+
+            if 'cname' not in manifest['annotations']:
+                logger.debug("cname annotation was none, which is invalid")
+                return None
+
+            if 'architecture' not in manifest['annotations']:
+                logger.debug("architecture annotation was none, which is invalid")
+                return None
+
+            if manifest['annotations']['cname'] == cname \
+               and manifest['annotations']['architecture'] == arch:
+                return manifest
+
+        return None
+
+    def attach_layer(self, container, cname, arch,  file_path, media_type):
 
         # File Blobs must exist
         if not os.path.exists(file_path):
             logger.exit(f"{file_path} does not exist.")
 
-        manifest = self.get_manifest(container)
+        manifest = self.get_manifest(container, cname, arch)
 
         # Create a new layer from the blob
         layer = oras.oci.NewLayer(file_path, media_type, is_dir=False)
@@ -138,6 +171,7 @@ class Registry(oras.provider.Registry):
     @ensure_container
     def status_manifest(self, container, manifest_id):
         pass
+
     @ensure_container
     def status_all(self, container):
         """
@@ -147,7 +181,7 @@ class Registry(oras.provider.Registry):
         - all layers listed in info.yaml must exist
         - all mediatypes of layers listed in info.yaml must be set correctly
         """
-        manifest = self.get_manifest(container)
+        index = self.get_index(container)
 
     def upload_index(
             self,
@@ -188,7 +222,7 @@ class Registry(oras.provider.Registry):
         """
         Ensures an oci index exists for the container, and returns it
         """
-        image_index = self.get_manifest(
+        image_index = self.get_index(
                         container,
                         allowed_media_type="application/vnd.oci.image.index.v1+json")
 
@@ -203,11 +237,11 @@ class Registry(oras.provider.Registry):
 
         return image_index
 
-    @ensure_container
-    def push_image_manifest(self, container, architecture, cname, info_yaml):
+    def push_image_manifest(self, container_name, architecture, cname, info_yaml):
         """
         creates and pushes an image manifest
         """
+        container = oras.container.Container(container_name)
         logger.debug("start push image manifest")
         assert info_yaml is not None, "error: info_yaml is None"
         with open(info_yaml, 'r') as f:
@@ -292,7 +326,14 @@ class Registry(oras.provider.Registry):
                 pass
 
         conf, _ = oras.oci.ManifestConfig(path=config_file)
-        conf["annotations"] = {}
+        manifest_digest = conf['digest']
+        logger.debug(f"manifest digest: {manifest_digest}")
+        conf['annotations'] = {}
+
+        # TODO: annotations may be part of digest calculation. We need to consider how digest is caclulated. according to specs its:
+        #   1. content addressable, so it should be the digest of the target manifest_digest
+        #   2. based on conf content and layers of image, so we need know the digest of the manifest and its config before we upload it 
+        conf['annotations']['cname'] = cname
 
         # Config is just another layer blob!
         response = self.upload_blob(config_file, container, conf)
@@ -302,21 +343,30 @@ class Registry(oras.provider.Registry):
         # Final upload of the manifest
         manifest_image["config"] = conf
 
-        #self._check_200_response(
-        #        self.upload_manifest(manifest_image, container))
+
+        manifest_container = oras.container.Container(f"{container_name}-{cname}")
+
+        logger.debug(f"Manifest Digest: {manifest_image['config']['digest']}")
 
         # attach Manifest to oci-index
         manifest_index_metadata = NewManifestMetadata()
         manifest_index_metadata['mediaType'] = "application/vnd.oci.image.manifest.v1+json"
-        manifest_index_metadata['digest'] = f"sha256:{checksum_sha256}"
+        manifest_index_metadata['digest'] = manifest_digest
         manifest_index_metadata['size'] = 0
         manifest_index_metadata['annotations'] = {}
+        manifest_index_metadata['annotations']['cname'] = cname
+        manifest_index_metadata['annotations']['architecture'] = architecture
+        manifest_index_metadata['annotations']['version'] = "experimental"
         manifest_index_metadata['platform'] = NewPlatform(architecture)
         manifest_index_metadata['artifactType'] = ""
 
         if self._check_if_manifest_exists(image_index, manifest_index_metadata):
-            logger.debug(f"Manifest with digest {checksum_sha256} already exists. Not uploading again.")
+            logger.debug(f"Manifest with digest {manifest_digest} already exists. Not uploading again.")
+            logger.debug(manifest_index_metadata)
             return
+
+        self._check_200_response(
+                self.upload_manifest(manifest_image, manifest_container))
 
         image_index['manifests'].append(manifest_index_metadata)
         logger.debug("Show Image Index")
