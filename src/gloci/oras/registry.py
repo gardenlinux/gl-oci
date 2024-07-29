@@ -171,7 +171,7 @@ class Registry(oras.provider.Registry):
             json=index,
         )
 
-    def _check_if_digest_exists(self, index, digest):
+    def _check_if_manifest_exists(self, index, manifest_meta):
         if index is None:
             return False
 
@@ -179,7 +179,7 @@ class Registry(oras.provider.Registry):
             return False
 
         for manifest in index['manifests']:
-            if manifest['digest'] == digest:
+            if manifest == manifest_meta:
                 return True
 
         return False
@@ -309,17 +309,14 @@ class Registry(oras.provider.Registry):
         manifest_index_metadata = NewManifestMetadata()
         manifest_index_metadata['mediaType'] = "application/vnd.oci.image.manifest.v1+json"
         manifest_index_metadata['digest'] = f"sha256:{checksum_sha256}"
-
-        if self._check_if_digest_exists(image_index, manifest_index_metadata['digest']):
-            logger.debug(f"Manifest with digest {checksum_sha256} already exists. Not uploading again.")
-            return
-
         manifest_index_metadata['size'] = 0
         manifest_index_metadata['annotations'] = {}
         manifest_index_metadata['platform'] = NewPlatform(architecture)
         manifest_index_metadata['artifactType'] = ""
 
-
+        if self._check_if_manifest_exists(image_index, manifest_index_metadata):
+            logger.debug(f"Manifest with digest {checksum_sha256} already exists. Not uploading again.")
+            return
 
         image_index['manifests'].append(manifest_index_metadata)
         logger.debug("Show Image Index")

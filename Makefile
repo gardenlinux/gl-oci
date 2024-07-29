@@ -23,6 +23,7 @@ install_deps: ## Install dependencies.
 example:
 	@echo "Push first image..."
 	$(PYTHON) -m gloci.cli image push --container localhost:8081/$(EXAMPLECONTAINERNAME):latest --architecture arm64 --cname yolo-example_dev --info_yaml example-data/info.yaml
+	$(PYTHON) -m gloci.cli image push --container localhost:8081/$(EXAMPLECONTAINERNAME):latest --architecture amd64 --cname yolo-example_dev --info_yaml example-data/info.yaml
 #	@echo "Attach some file to image..."
 #	$(PYTHON) -m gloci.cli image attach --container localhost:8081/$(EXAMPLECONTAINERNAME):latest  --file_path config.ini --media_type application/vnd.oci.image.layer.v1.tar
 	@echo "Inspect final oci image"
