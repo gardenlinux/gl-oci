@@ -171,6 +171,19 @@ class Registry(oras.provider.Registry):
             json=index,
         )
 
+    def _check_if_digest_exists(self, index, digest):
+        if index is None:
+            return False
+
+        if index['manifests'] is None:
+            return False
+
+        for manifest in index['manifests']:
+            if manifest['digest'] == digest:
+                return True
+
+        return False
+
     def _get_index(self, container):
         """
         Ensures an oci index exists for the container, and returns it
@@ -232,6 +245,10 @@ class Registry(oras.provider.Registry):
             logger.debug(f"\tannotations:= {annotations}")
 
             file_path = os.path.join(base_path, artifact['file_name'])
+
+            checksum_sha256 = calculate_sha256(file_path)
+            checksum_sha1 = calculate_sha1(file_path)
+            checksum_md5 = calculate_md5(file_path)
             # File Blobs must exist
             if not os.path.exists(file_path):
                 logger.info(f"{file_path} does not exist.")
@@ -247,9 +264,7 @@ class Registry(oras.provider.Registry):
             # Create a new layer from the blob
             layer = oras.oci.NewLayer(file_path, media_type, is_dir=cleanup_blob)
             # annotations = annotations.get_annotations(blob)
-            checksum_sha256 = calculate_sha256(file_path)
-            checksum_sha1 = calculate_sha1(file_path)
-            checksum_md5 = calculate_md5(file_path)
+
             layer["annotations"] = {
                 oras.defaults.annotation_title: file_name,
                 "application/vnd.gardenlinux.image.checksum.sha256": checksum_sha256,
@@ -294,10 +309,17 @@ class Registry(oras.provider.Registry):
         manifest_index_metadata = NewManifestMetadata()
         manifest_index_metadata['mediaType'] = "application/vnd.oci.image.manifest.v1+json"
         manifest_index_metadata['digest'] = f"sha256:{checksum_sha256}"
+
+        if self._check_if_digest_exists(image_index, manifest_index_metadata['digest']):
+            logger.debug(f"Manifest with digest {checksum_sha256} already exists. Not uploading again.")
+            return
+
         manifest_index_metadata['size'] = 0
         manifest_index_metadata['annotations'] = {}
         manifest_index_metadata['platform'] = NewPlatform(architecture)
         manifest_index_metadata['artifactType'] = ""
+
+
 
         image_index['manifests'].append(manifest_index_metadata)
         logger.debug("Show Image Index")
