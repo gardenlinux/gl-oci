@@ -12,6 +12,7 @@ import jsonschema
 import requests
 
 import os
+import hashlib
 import copy
 import yaml
 import uuid
@@ -84,6 +85,19 @@ class Registry(oras.provider.Registry):
         super().__init__(insecure=True)
         self.registry_url = registry_url
         self.config_path = config_path
+
+    @ensure_container
+    def get_digest(self, container, allowed_media_type=None):
+        if not allowed_media_type:
+            default_image_index_media_type = "application/vnd.oci.image.manifest.v1+json"
+            allowed_media_type = [default_image_index_media_type]
+        self.load_configs(container)
+        headers = {"Accept": ";".join(allowed_media_type)}
+        headers.update(self.headers)
+        get_manifest = f"{self.prefix}://{container.manifest_url()}"
+        response = self.do_request(get_manifest, "GET", headers=headers)
+        self._check_200_response(response)
+        return f"sha256:{hashlib.sha256(response.content).hexdigest()}"
 
     @ensure_container
     def get_index(self, container, allowed_media_type=None):
