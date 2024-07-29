@@ -1,3 +1,4 @@
+![poetry build](https://github.com/gardenlinux/gl-oci/actions/workflows/build.yml/badge.svg)
 ![Black Lint](https://github.com/gardenlinux/gl-oci/actions/workflows/black.yml/badge.svg)
 # gl-oci: Tool to create OCI artefacts and publish OCI
 # 
