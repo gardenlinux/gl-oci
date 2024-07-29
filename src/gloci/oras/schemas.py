@@ -35,8 +35,3 @@ index = {
     "properties": indexProperties,
     "additionalProperties": True,
 }
-
-
-
-
-

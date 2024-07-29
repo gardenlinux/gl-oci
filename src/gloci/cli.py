@@ -2,7 +2,7 @@
 
 import click
 
-from gloci.commands import image,  ocm
+from gloci.commands import image, ocm
 
 
 @click.group()
@@ -15,5 +15,5 @@ cli.add_command(image.image)
 cli.add_command(ocm.ocm)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli()
