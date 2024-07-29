@@ -65,8 +65,10 @@ def get_uri_for_digest(uri, digest):
     return f"{base_uri}@{digest}"
 
 
-def NewPlatform() -> dict:
-    return copy.deepcopy(EmptyPlatform)
+def NewPlatform(architecture) -> dict:
+    platform = copy.deepcopy(EmptyPlatform)
+    platform['architecture'] = architecture
+    return platform
 
 
 def NewManifestMetadata() -> dict:
@@ -188,13 +190,12 @@ class Registry(oras.provider.Registry):
 
         return image_index
 
-
     @ensure_container
-    def push_image_manifest(self, container, info_yaml):
+    def push_image_manifest(self, container, architecture, cname, info_yaml):
         """
         creates and pushes an image manifest
         """
-        logger.debug("start push image manifest") 
+        logger.debug("start push image manifest")
         assert info_yaml is not None, "error: info_yaml is None"
         with open(info_yaml, 'r') as f:
             info_data = yaml.safe_load(f)
@@ -295,8 +296,7 @@ class Registry(oras.provider.Registry):
         manifest_index_metadata['digest'] = f"sha256:{checksum_sha256}"
         manifest_index_metadata['size'] = 0
         manifest_index_metadata['annotations'] = {}
-        # TODO: fill in Platform details based on input or defaults
-        manifest_index_metadata['platform'] = NewPlatform()
+        manifest_index_metadata['platform'] = NewPlatform(architecture)
         manifest_index_metadata['artifactType'] = ""
 
         image_index['manifests'].append(manifest_index_metadata)
