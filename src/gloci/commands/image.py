@@ -112,7 +112,7 @@ def inspect_index(container):
     """inspects complete index"""
     container = oras.container.Container(container)
     registry = GlociRegistry(container.registry)
-    pprint.pprint(registry.get_index_manifest(container), compact=True)
+    pprint.pprint(registry.get_index(container), compact=True)
 
 
 @image.command()

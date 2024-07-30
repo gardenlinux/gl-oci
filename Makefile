@@ -32,3 +32,4 @@ example:
 	@echo "\n"
 	$(PYTHON) -m gloci.cli image inspect --container  localhost:8081/$(EXAMPLECONTAINERNAME):latest --cname yolo-example_dev --architecture arm64
 	$(PYTHON) -m gloci.cli image inspect --container  localhost:8081/$(EXAMPLECONTAINERNAME):latest --cname yolo-example_dev --architecture amd64
+	$(PYTHON) -m gloci.cli image inspect-index --container  localhost:8081/$(EXAMPLECONTAINERNAME):latest
