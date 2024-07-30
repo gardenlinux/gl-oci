@@ -103,7 +103,9 @@ def inspect(container, cname, architecture):
     """inspect container"""
     container = oras.container.Container(container)
     registry = GlociRegistry(container.registry)
-    pprint.pprint(registry.get_manifest(container, cname, architecture), compact=True)
+    pprint.pprint(
+        registry.get_manifest_by_cname(container, cname, architecture), compact=True
+    )
 
 
 @image.command()

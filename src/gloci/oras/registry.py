@@ -127,7 +127,7 @@ class Registry(oras.provider.Registry):
             return None
 
     @ensure_container
-    def get_manifest(self, container, cname, arch, allowed_media_type=None):
+    def get_manifest_by_cname(self, container, cname, arch, allowed_media_type=None):
         """
         Returns the manifest for a cname+arch combination of a container
         Will return None if no result was found
@@ -138,25 +138,33 @@ class Registry(oras.provider.Registry):
             logger.debug("Index is empty")
             return None
 
-        for manifest in index["manifests"]:
-            logger.debug(manifest)
-            if "annotations" not in manifest:
+        for manifest_meta in index["manifests"]:
+            if "annotations" not in manifest_meta:
                 logger.debug("Manifest annotations was none, which is invalid")
                 return None
 
-            if "cname" not in manifest["annotations"]:
+            if "cname" not in manifest_meta["annotations"]:
                 logger.debug("cname annotation was none, which is invalid")
                 return None
 
-            if "architecture" not in manifest["annotations"]:
+            if "architecture" not in manifest_meta["annotations"]:
                 logger.debug("architecture annotation was none, which is invalid")
                 return None
 
             if (
-                manifest["annotations"]["cname"] == cname
-                and manifest["annotations"]["architecture"] == arch
+                manifest_meta["annotations"]["cname"] == cname
+                and manifest_meta["annotations"]["architecture"] == arch
             ):
-                return manifest
+                manifest_digest = manifest_meta["digest"]
+                logger.debug(f"registry: {container.registry}")
+                logger.debug(f"repository: {container.repository}")
+                logger.debug(f"tag: {container.tag}")
+                target_container_name = f"{container.registry}/{container.repository}:{manifest_digest.replace(':', '@')}"
+                logger.debug(f"target container name: {target_container_name}")
+                target_container = oras.container.Container(target_container_name)
+                logger.debug(target_container)
+                self.get_manifest(target_container)
+                return None
 
         return None
 
@@ -166,7 +174,7 @@ class Registry(oras.provider.Registry):
         if not os.path.exists(file_path):
             logger.exit(f"{file_path} does not exist.")
 
-        manifest = self.get_manifest(container, cname, arch)
+        manifest = self.get_manifest_by_cname(container, cname, arch)
 
         # Create a new layer from the blob
         layer = oras.oci.NewLayer(file_path, media_type, is_dir=False)
@@ -282,10 +290,8 @@ class Registry(oras.provider.Registry):
         logger.debug("Upload metadata info Layer")
         assert container is not None, "error: container is none"
         assert layer is not None, "error: layer is none"
-        response = self.upload_blob(info_yaml, container, layer)
-
-        logger.debug("Check response from upload metadata info Layer")
-        self._check_200_response(response)
+        # response = self.upload_blob(info_yaml, container, layer)
+        # self._check_200_response(response)
 
         missing_layer_detected = False
 

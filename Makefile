@@ -24,8 +24,8 @@ example:
 	@echo "Push first image..."
 	$(PYTHON) -m gloci.cli image push --container localhost:8081/$(EXAMPLECONTAINERNAME):latest --architecture arm64 --cname yolo-example_dev --info_yaml example-data/info_1.yaml
 	$(PYTHON) -m gloci.cli image push --container localhost:8081/$(EXAMPLECONTAINERNAME):latest --architecture amd64 --cname yolo-example_dev --info_yaml example-data/info_1.yaml
-	$(PYTHON) -m gloci.cli image push --container localhost:8081/$(EXAMPLECONTAINERNAME):latest --architecture arm64 --cname yolo-example_dev --info_yaml example-data/info_2.yaml
-	$(PYTHON) -m gloci.cli image push --container localhost:8081/$(EXAMPLECONTAINERNAME):latest --architecture amd64 --cname yolo-example_dev --info_yaml example-data/info_2.yaml
+	$(PYTHON) -m gloci.cli image push --container localhost:8081/$(EXAMPLECONTAINERNAME):latest --architecture arm64 --cname yolo2-example_dev --info_yaml example-data/info_2.yaml
+	$(PYTHON) -m gloci.cli image push --container localhost:8081/$(EXAMPLECONTAINERNAME):latest --architecture amd64 --cname yolo2-example_dev --info_yaml example-data/info_2.yaml
 #	@echo "Attach some file to image..."
 #	$(PYTHON) -m gloci.cli image attach --container localhost:8081/$(EXAMPLECONTAINERNAME):latest --cname yolo-example_dev --architecture arm64 --file_path config.ini --media_type application/vnd.oci.image.layer.v1.tar
 	@echo "Inspect final oci image"
