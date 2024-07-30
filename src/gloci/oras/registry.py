@@ -9,6 +9,7 @@ from oras.decorator import ensure_container
 from oras.logger import setup_logger, logger
 
 import jsonschema
+import json
 import requests
 
 import os
@@ -18,6 +19,7 @@ import yaml
 import uuid
 import re
 from enum import Enum, auto
+from hashlib import sha256
 
 from gloci.oras.crypto import calculate_sha1, calculate_md5, calculate_sha256
 from gloci.oras.schemas import index as indexSchema
@@ -101,6 +103,15 @@ class Registry(oras.provider.Registry):
         response = self.do_request(get_manifest, "GET", headers=headers)
         self._check_200_response(response)
         return f"sha256:{hashlib.sha256(response.content).hexdigest()}"
+
+    def calculate_manifest_digest(self, manifest_image, config_digest):
+        # Make sure manifest contains required attributes
+        jsonschema.validate(manifest_image, schema=oras.schemas.manifest)
+        digests = []
+        for layer in manifest_image["layers"]:
+            digests.append(layer["digest"])
+        digests.append(config_digest)
+        return sha256(bytes(digests)).hexdigest()
 
     @ensure_container
     def get_index(self, container, allowed_media_type=None):
@@ -245,6 +256,26 @@ class Registry(oras.provider.Registry):
 
         return False
 
+    def create_config_from_dict(self, conf: dict, annotations: dict):
+        """
+        Write a new OCI configuration to file, and generate oci meta data for it
+        For reference see https://github.com/opencontainers/image-spec/blob/main/config.md
+        annotations, mediatrype, size, digest are not part of digest and size calculation,
+        and therefore must be attached to the output dict and not written to the file.
+
+        :param conf: dict with custom configuration (the payload of the configuration)
+        :param annotations: dict with custom annotations to be attached to metadata part of config
+
+        """
+        config_path = os.path.join(os.path.curdir, str(uuid.uuid4()))
+        with open(config_path, "w") as fp:
+            json.dump(conf, fp)
+        conf["annotations"] = annotations
+        conf["mediaType"] = oras.defaults.unknown_config_media_type
+        conf["size"] = oras.utils.get_size(config_path)
+        conf["digest"] = f"sha256:{oras.utils.get_file_hash(config_path)}"
+        return conf, config_path
+
     def _get_index(self, container):
         """
         Ensures an oci index exists for the container, and returns it
@@ -274,24 +305,11 @@ class Registry(oras.provider.Registry):
         with open(info_yaml, "r") as f:
             info_data = yaml.safe_load(f)
             base_path = os.path.join(os.path.dirname(info_yaml))
-        conf, config_file = oras.oci.ManifestConfig()
 
         image_index = self._get_index(container)
 
         logger.debug("Creating new Manifest")
         manifest_image = oras.oci.NewManifest()
-
-        logger.debug("Create metadata info Layer")
-        layer = oras.oci.NewLayer(
-            info_yaml, "application/vnd.gardenlinux.metadata.info", is_dir=False
-        )
-        manifest_image["layers"].append(layer)
-
-        logger.debug("Upload metadata info Layer")
-        assert container is not None, "error: container is none"
-        assert layer is not None, "error: layer is none"
-        # response = self.upload_blob(info_yaml, container, layer)
-        # self._check_200_response(response)
 
         missing_layer_detected = False
 
@@ -329,7 +347,7 @@ class Registry(oras.provider.Registry):
             layer["annotations"] = {
                 oras.defaults.annotation_title: file_name,
                 "application/vnd.gardenlinux.image.checksum.sha256": checksum_sha256,
-                "application/vnd.gardenlinux.image.checksum.sha1": checksum_md5,
+                "application/vnd.gardenlinux.image.checksum.sha1": checksum_sha1,
                 "application/vnd.gardenlinux.image.checksum.md5": checksum_md5,
             }
             if annotations:
@@ -346,26 +364,31 @@ class Registry(oras.provider.Registry):
             if cleanup_blob and os.path.exists(file_path):
                 os.remove(file_path)
 
-        config_file = os.path.join(os.path.curdir, str(uuid.uuid4()))
-        if not os.path.exists(config_file):
-            with open(config_file, "w"):
-                pass
+        logger.debug("Create metadata info Layer")
+        layer = oras.oci.NewLayer(
+            info_yaml, "application/vnd.gardenlinux.metadata.info", is_dir=False
+        )
+        manifest_image["layers"].append(layer)
 
-        conf, _ = oras.oci.ManifestConfig(path=config_file)
-        manifest_digest = conf["digest"]
+        logger.debug("Upload metadata info Layer")
+        assert container is not None, "error: container is none"
+        assert layer is not None, "error: layer is none"
+        response = self.upload_blob(info_yaml, container, layer)
+        self._check_200_response(response)
+
+        config_annotations = {}
+        config_annotations["cname"] = cname
+        config_annotations["architecture"] = architecture
+        conf, config_file = self.create_config_from_dict(dict(), config_annotations)
+
+        manifest_digest = self.calculate_manifest_digest(manifest_image, conf["digest"])
+
         logger.debug(f"manifest digest: {manifest_digest}")
-        conf["annotations"] = {}
-
-        # TODO: annotations may be part of digest calculation. We need to consider how digest is caclulated. according to specs its:
-        #   1. content addressable, so it should be the digest of the target manifest_digest
-        #   2. based on conf content and layers of image, so we need know the digest of the manifest and its config before we upload it
-        conf["annotations"]["cname"] = cname
-
         # Config is just another layer blob!
         response = self.upload_blob(config_file, container, conf)
         self._check_200_response(response)
 
-        os.remove(config_file)
+        # os.remove(config_file)
         # Final upload of the manifest
         manifest_image["config"] = conf
 
