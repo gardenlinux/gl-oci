@@ -392,7 +392,9 @@ class Registry(oras.provider.Registry):
         manifest_image["config"] = conf
 
         manifest_container_name = f"{container_name}-{cname}"
-        manifest_container = oras.container.Container(f"{container_name}-{cname}-{architecture}")
+        manifest_container = oras.container.Container(
+            f"{container_name}-{cname}-{architecture}"
+        )
         logger.debug(f"Manifest image tag {manifest_container_name}")
 
         self._check_200_response(
@@ -414,7 +416,9 @@ class Registry(oras.provider.Registry):
             "application/vnd.oci.image.manifest.v1+json"
         )
         manifest_index_metadata["digest"] = manifest_image["digest"]
-        logger.debug(f"Manifest Digest in MetaData: {manifest_index_metadata['digest']}")
+        logger.debug(
+            f"Manifest Digest in MetaData: {manifest_index_metadata['digest']}"
+        )
         manifest_index_metadata["size"] = 0
         manifest_index_metadata["annotations"] = {}
         manifest_index_metadata["annotations"]["cname"] = cname

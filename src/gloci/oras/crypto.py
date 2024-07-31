@@ -1,7 +1,6 @@
 import hashlib
 
 
-
 def calculate_sha1(file_path):
     """Calculate the SHA1 checksum of a file."""
     sha1_hash = hashlib.sha1()
