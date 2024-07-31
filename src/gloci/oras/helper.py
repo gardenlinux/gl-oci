@@ -1,4 +1,13 @@
 import re
+import json
+import os
+
+
+def write_dict_to_json_file(input, output_path):
+    if os.path.exists(output_path):
+        raise ValueError(f"{output_path} already exists")
+    with open(output_path, "w") as fp:
+        json.dump(input, fp)
 
 
 def get_uri_for_digest(uri, digest):
