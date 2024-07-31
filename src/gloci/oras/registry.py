@@ -147,6 +147,8 @@ class Registry(oras.provider.Registry):
             logger.debug("Index is empty")
             return None
 
+        logger.debug("Index:")
+        logger.debug(index)
         for manifest_meta in index["manifests"]:
             logger.debug(manifest_meta)
             if "annotations" not in manifest_meta:
@@ -166,16 +168,15 @@ class Registry(oras.provider.Registry):
                 and manifest_meta["annotations"]["architecture"] == arch
             ):
                 manifest_digest = f"{manifest_meta['digest']}"
-                logger.debug(f"manifest meta: {manifest_meta}")
+                logger.debug(f"manifest URL : {container.manifest_url()}")
                 logger.debug(f"registry: {container.registry}")
                 logger.debug(f"repository: {container.repository}")
                 logger.debug(f"tag: {container.tag}")
-                target_container_name = f"{container.registry}/{container.repository}:{manifest_digest.replace(':', '@')}"
-                logger.debug(f"target container name: {target_container_name}")
-                target_container = oras.container.Container(target_container_name)
-                logger.debug(target_container)
-                self.get_manifest(target_container)
-                return None
+                response = self.get_blob(container, manifest_digest)
+                self._check_200_response(response)
+                manifest = response.json()
+                jsonschema.validate(manifest, schema=oras.schemas.manifest)
+                return manifest
 
         return None
 

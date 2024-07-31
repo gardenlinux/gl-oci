@@ -30,6 +30,6 @@ example:
 #	$(PYTHON) -m gloci.cli image attach --container localhost:8081/$(EXAMPLECONTAINERNAME):latest --cname yolo-example_dev --architecture arm64 --file_path config.ini --media_type application/vnd.oci.image.layer.v1.tar
 	@echo "Inspect final oci image"
 	@echo "\n"
-	$(PYTHON) -m gloci.cli image inspect --container  localhost:8081/$(EXAMPLECONTAINERNAME):latest --cname yolo-example_dev --architecture arm64
+	$(PYTHON) -m gloci.cli image inspect-index --container  localhost:8081/$(EXAMPLECONTAINERNAME):latest 
+	$(PYTHON) -m gloci.cli image inspect --container  localhost:8081/$(EXAMPLECONTAINERNAME):latest --cname yolo-example_dev --architecture arm64 
 	$(PYTHON) -m gloci.cli image inspect --container  localhost:8081/$(EXAMPLECONTAINERNAME):latest --cname yolo-example_dev --architecture amd64
-	$(PYTHON) -m gloci.cli image inspect-index --container  localhost:8081/$(EXAMPLECONTAINERNAME):latest
