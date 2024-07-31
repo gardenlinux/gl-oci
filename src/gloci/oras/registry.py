@@ -69,14 +69,22 @@ def get_uri_for_digest(uri, digest):
     return f"{base_uri}@{digest}"
 
 
-def NewPlatform(architecture) -> dict:
+def NewPlatform(architecture, version) -> dict:
     platform = copy.deepcopy(EmptyPlatform)
     platform["architecture"] = architecture
+    platform["os.version"] = version
     return platform
 
 
-def NewManifestMetadata() -> dict:
-    return copy.deepcopy(EmptyManifestMetadata)
+def NewManifestMetadata(digest, size, annotaions, platform_data) -> dict:
+    manifest_meta_data = copy.deepcopy(EmptyManifestMetadata)
+    manifest_meta_data["mediaType"] = "application/vnd.oci.image.manifest.v1+json"
+    manifest_meta_data["digest"] = digest
+    manifest_meta_data["size"] = size
+    manifest_meta_data["annotations"] = annotaions
+    manifest_meta_data["platform"] = platform_data
+    manifest_meta_data["artifactType"] = ""
+    return manifest_meta_data
 
 
 def NewIndex() -> dict:
@@ -134,12 +142,15 @@ class Registry(oras.provider.Registry):
             return None
 
     @ensure_container
-    def get_manifest_by_cname(self, container, cname, arch, allowed_media_type=None):
+    def get_manifest_meta_data_by_cname(
+        self, container, cname, arch, allowed_media_type=None
+    ):
         """
         Returns the manifest for a cname+arch combination of a container
         Will return None if no result was found
         """
         index = self.get_index(container, allowed_media_type)
+        logger.debug(index)
 
         if "manifests" not in index:
             logger.debug("Index is empty")
@@ -163,14 +174,51 @@ class Registry(oras.provider.Registry):
                 manifest_meta["annotations"]["cname"] == cname
                 and manifest_meta["annotations"]["architecture"] == arch
             ):
-                manifest_digest = f"{manifest_meta['digest']}"
-                response = self.get_blob(container, manifest_digest)
-                self._check_200_response(response)
-                manifest = response.json()
-                jsonschema.validate(manifest, schema=oras.schemas.manifest)
-                return manifest
+                return manifest_meta
 
         return None
+
+    @ensure_container
+    def get_manifest_by_cname(self, container, cname, arch, allowed_media_type=None):
+        """
+        Returns the manifest for a cname+arch combination of a container
+        Will return None if no result was found
+        """
+        manifest_meta = self.get_manifest_meta_data_by_cname(container, cname, arch)
+        if manifest_meta is None:
+            logger.error(f"No manifest found for {cname}-{arch}")
+            return None
+        if "digest" not in manifest_meta:
+            logger.error("No digest found in metadata!")
+        manifest_digest = manifest_meta['digest']
+        response = self.get_blob(container, manifest_digest)
+        self._check_200_response(response)
+        manifest = response.json()
+        jsonschema.validate(manifest, schema=oras.schemas.manifest)
+        return manifest
+
+    @ensure_container
+    def update_index(self, container, old_digest, manifest_meta_data):
+        """
+        replaces an old manifest entry with a new manifest entry
+        """
+        index = self.get_index(container)
+
+        if "manifests" not in index:
+            logger.debug("Index is empty")
+        updated = False
+        if old_digest is not None:
+            for i, manifest in enumerate(index["manifests"]):
+                if manifest["digest"] == old_digest:
+                    logger.debug("Found old manifest entry")
+                    index["manifests"][i] = manifest_meta_data
+                    updated = True
+                    break
+        if not updated:
+            index["manifests"].append(manifest_meta_data)
+
+        response = self.upload_index(index, container)
+        self._check_200_response(response)
 
     def attach_layer(self, container_name, cname, architecture, file_path, media_type):
 
@@ -203,9 +251,19 @@ class Registry(oras.provider.Registry):
         logger.debug(f"old manifest digest is: {old_manifest_digest}")
         self._check_200_response(self.upload_manifest(manifest, manifest_container))
 
-        # TODO: get new digest and update oci-index... TODO: Why is this not updated?
         new_manifest_digest = self.get_digest(manifest_container)
-        logger.debug(f"new manifest digest is: {old_manifest_digest}")
+        logger.debug(f"new manifest digest is: {new_manifest_digest}")
+        # TODO: calc size
+        new_size = 0
+        version = "experimental"
+        new_manifest_metadata = self.get_manifest_meta_data_by_cname(
+            container, cname, architecture
+        )
+        new_manifest_metadata["digest"] = new_manifest_digest
+        new_manifest_metadata["size"] = new_size
+        new_manifest_metadata["platform"] = NewPlatform(architecture, version)
+
+        self.update_index(container, old_manifest_digest, new_manifest_metadata)
 
         print(f"Successfully attached {file_path} to {manifest_container}")
 
@@ -389,7 +447,7 @@ class Registry(oras.provider.Registry):
         )
 
         # If we would re-upload the manifest with a new digest,
-        # the registry calculates a new digest including the new attribute.. 
+        # the registry calculates a new digest including the new attribute..
         # so we can NOT include digest to manifest
         #
         # manifest_image["digest"] = self.get_digest(manifest_container)
@@ -398,19 +456,18 @@ class Registry(oras.provider.Registry):
         # )
 
         # attach Manifest to oci-index
-        manifest_index_metadata = NewManifestMetadata()
-        manifest_index_metadata["mediaType"] = (
-            "application/vnd.oci.image.manifest.v1+json"
+        metadata_annotations = {}
+        metadata_annotations["cname"] = cname
+        metadata_annotations["architecture"] = architecture
+        version = "experimental"
+        manifest_digest = self.get_digest(manifest_container)
+        manifest_index_metadata = NewManifestMetadata(
+            manifest_digest,
+            0,
+            metadata_annotations,
+            NewPlatform(architecture, version),
         )
-        manifest_index_metadata["digest"] = self.get_digest(manifest_container)
-        manifest_index_metadata["size"] = 0
-        manifest_index_metadata["annotations"] = {}
-        manifest_index_metadata["annotations"]["cname"] = cname
-        manifest_index_metadata["annotations"]["architecture"] = architecture
-        manifest_index_metadata["annotations"]["version"] = "experimental"
-        manifest_index_metadata["platform"] = NewPlatform(architecture)
-        manifest_index_metadata["artifactType"] = ""
-        image_index["manifests"].append(manifest_index_metadata)
+        self.update_index(container, None, manifest_index_metadata)
         jsonschema.validate(image_index, schema=indexSchema)
         response = self.upload_index(image_index, container)
         self._check_200_response(response)
