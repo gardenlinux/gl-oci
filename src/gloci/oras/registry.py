@@ -104,14 +104,12 @@ class Registry(oras.provider.Registry):
         self._check_200_response(response)
         return f"sha256:{hashlib.sha256(response.content).hexdigest()}"
 
-    def calculate_manifest_digest(self, manifest_image, config_digest):
+    def calculate_manifest_digest(self, manifest_image):
         # Make sure manifest contains required attributes
         jsonschema.validate(manifest_image, schema=oras.schemas.manifest)
-        digests = []
-        for layer in manifest_image["layers"]:
-            digests.append(layer["digest"])
-        digests.append(config_digest)
-        return sha256(bytes(digests)).hexdigest()
+        content = json.dumps(manifest_image, sort_keys=True).encode()
+        digest = sha256(content).hexdigest()
+        return f"sha256:{digest}"
 
     @ensure_container
     def get_index(self, container, allowed_media_type=None):
@@ -150,6 +148,7 @@ class Registry(oras.provider.Registry):
             return None
 
         for manifest_meta in index["manifests"]:
+            logger.debug(manifest_meta)
             if "annotations" not in manifest_meta:
                 logger.debug("Manifest annotations was none, which is invalid")
                 return None
@@ -166,7 +165,8 @@ class Registry(oras.provider.Registry):
                 manifest_meta["annotations"]["cname"] == cname
                 and manifest_meta["annotations"]["architecture"] == arch
             ):
-                manifest_digest = manifest_meta["digest"]
+                manifest_digest = f"{manifest_meta['digest']}"
+                logger.debug(f"manifest meta: {manifest_meta}")
                 logger.debug(f"registry: {container.registry}")
                 logger.debug(f"repository: {container.repository}")
                 logger.debug(f"tag: {container.tag}")
@@ -300,7 +300,7 @@ class Registry(oras.provider.Registry):
         creates and pushes an image manifest
         """
         container = oras.container.Container(container_name)
-        logger.debug("start push image manifest")
+        logger.debug(f"container name: {container_name}")
         assert info_yaml is not None, "error: info_yaml is None"
         with open(info_yaml, "r") as f:
             info_data = yaml.safe_load(f)
@@ -381,27 +381,40 @@ class Registry(oras.provider.Registry):
         config_annotations["architecture"] = architecture
         conf, config_file = self.create_config_from_dict(dict(), config_annotations)
 
-        manifest_digest = self.calculate_manifest_digest(manifest_image, conf["digest"])
-
-        logger.debug(f"manifest digest: {manifest_digest}")
-        # Config is just another layer blob!
+        # manifest_digest = self.calculate_manifest_digest(manifest_image, conf["digest"])
+        # logger.debug(f"manifest digest: {manifest_digest}")
+        logger.debug("upload config blob")
         response = self.upload_blob(config_file, container, conf)
         self._check_200_response(response)
+        logger.debug(response)
 
-        # os.remove(config_file)
-        # Final upload of the manifest
+        logger.debug("upload manifest")
         manifest_image["config"] = conf
 
-        manifest_container = oras.container.Container(f"{container_name}-{cname}")
+        manifest_container_name = f"{container_name}-{cname}"
+        manifest_container = oras.container.Container(f"{container_name}-{cname}-{architecture}")
+        logger.debug(f"Manifest image tag {manifest_container_name}")
 
-        logger.debug(f"Manifest Digest: {manifest_image['config']['digest']}")
+        self._check_200_response(
+            self.upload_manifest(manifest_image, manifest_container)
+        )
+        manifest_image["digest"] = self.get_digest(manifest_container)
+
+        logger.debug(f"Manifest Digest in manifest: {manifest_image['digest']}")
+
+        self._check_200_response(
+            self.upload_manifest(manifest_image, manifest_container)
+        )
+
+        logger.debug("TODO: get digest of manifest")
 
         # attach Manifest to oci-index
         manifest_index_metadata = NewManifestMetadata()
         manifest_index_metadata["mediaType"] = (
             "application/vnd.oci.image.manifest.v1+json"
         )
-        manifest_index_metadata["digest"] = manifest_digest
+        manifest_index_metadata["digest"] = manifest_image["digest"]
+        logger.debug(f"Manifest Digest in MetaData: {manifest_index_metadata['digest']}")
         manifest_index_metadata["size"] = 0
         manifest_index_metadata["annotations"] = {}
         manifest_index_metadata["annotations"]["cname"] = cname
@@ -409,18 +422,6 @@ class Registry(oras.provider.Registry):
         manifest_index_metadata["annotations"]["version"] = "experimental"
         manifest_index_metadata["platform"] = NewPlatform(architecture)
         manifest_index_metadata["artifactType"] = ""
-
-        if self._check_if_manifest_exists(image_index, manifest_index_metadata):
-            logger.debug(
-                f"Manifest with digest {manifest_digest} already exists. Not uploading again."
-            )
-            logger.debug(manifest_index_metadata)
-            return
-
-        self._check_200_response(
-            self.upload_manifest(manifest_image, manifest_container)
-        )
-
         image_index["manifests"].append(manifest_index_metadata)
         logger.debug("Show Image Index")
         logger.debug(image_index)
