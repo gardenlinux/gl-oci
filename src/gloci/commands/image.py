@@ -53,6 +53,7 @@ def push(container_name, architecture, cname, info_yaml):
 @image.command()
 @click.option(
     "--container",
+    "container_name",
     required=True,
     type=click.Path(),
     help="container string e.g. ghcr.io/gardenlinux/gardenlinux:1337",
@@ -70,12 +71,12 @@ def push(container_name, architecture, cname, info_yaml):
 @click.option(
     "--media_type", required=True, type=click.Path(), help="mediatype of file"
 )
-def attach(container, cname, architecture, file_path, media_type):
+def attach(container_name, cname, architecture, file_path, media_type):
     """Attach data to an existing image manifest"""
-    container = oras.container.Container(container)
+    container = oras.container.Container(container_name)
     registry = GlociRegistry(container.registry)
 
-    registry.attach_layer(container, cname, architecture, file_path, media_type)
+    registry.attach_layer(container_name, cname, architecture, file_path, media_type)
 
     click.echo(f"Attached {file_path} to {container}")
 
