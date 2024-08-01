@@ -21,15 +21,23 @@ install_deps: ## Install dependencies.
 	$(VENV)/bin/pip install -r requirements.txt
 
 example:
-	@echo "Push first image..."
+	@echo "==== DEMO ===="
+	@echo "=== Push dummy container 1 arm64"
 	$(PYTHON) -m gloci.cli image push --container localhost:8081/$(EXAMPLECONTAINERNAME):latest --architecture arm64 --cname yolo-example_dev --info_yaml example-data/info_1.yaml
+	@echo "=== Push dummy container 1 amd64"
 	$(PYTHON) -m gloci.cli image push --container localhost:8081/$(EXAMPLECONTAINERNAME):latest --architecture amd64 --cname yolo-example_dev --info_yaml example-data/info_1.yaml
+	@echo "=== Push dummy container 2 arm64"
 	$(PYTHON) -m gloci.cli image push --container localhost:8081/$(EXAMPLECONTAINERNAME):latest --architecture arm64 --cname yolo2-example_dev --info_yaml example-data/info_2.yaml
+	@echo "=== Push dummy container 2 amd64"
 	$(PYTHON) -m gloci.cli image push --container localhost:8081/$(EXAMPLECONTAINERNAME):latest --architecture amd64 --cname yolo2-example_dev --info_yaml example-data/info_2.yaml
-	@echo "Attach some file to image..."
+	@echo "=== Attach an Extra file to dummy container 2 arm64"
 	$(PYTHON) -m gloci.cli image attach --container localhost:8081/$(EXAMPLECONTAINERNAME):latest --cname yolo-example_dev --architecture arm64 --file_path example-data/extras --media_type application/vnd.oci.image.layer.v1.tar
-	@echo "Inspect final oci image"
-	@echo "\n"
+	@echo ""
+	@echo ""
+	@echo ""
+	@echo "=== Inspect oci-index"
 	$(PYTHON) -m gloci.cli image inspect-index --container  localhost:8081/$(EXAMPLECONTAINERNAME):latest 
+	@echo "=== Inspect single manigest"
 	$(PYTHON) -m gloci.cli image inspect --container  localhost:8081/$(EXAMPLECONTAINERNAME):latest --cname yolo-example_dev --architecture arm64 
+	@echo "=== Inspect single manigest"
 	$(PYTHON) -m gloci.cli image inspect --container  localhost:8081/$(EXAMPLECONTAINERNAME):latest --cname yolo-example_dev --architecture amd64

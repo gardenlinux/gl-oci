@@ -4,8 +4,8 @@ import oras.provider
 import oras.client
 import oras.utils
 from oras.decorator import ensure_container
-from oras.logger import setup_logger, logger
 
+import logging
 import jsonschema
 import json
 import requests
@@ -48,8 +48,8 @@ class ManifestState(Enum):
     Final = auto()
 
 
-setup_logger(quiet=False, debug=True)
-
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename='gl-ci.log', level=logging.DEBUG)
 
 def attach_state(d: dict, state):
     d["image_state"] = state
@@ -242,7 +242,6 @@ class Registry(oras.provider.Registry):
         attach_state(manifest["annotations"], new_state)
 
     def attach_layer(self, container_name, cname, architecture, file_path, media_type):
-        # File Blobs must exist
         if not os.path.exists(file_path):
             logger.exit(f"{file_path} does not exist.")
 
@@ -257,15 +256,11 @@ class Registry(oras.provider.Registry):
         if cur_state == "SIGNED":
             logger.exit("Manifest is already signed. Manifest is read-only now")
 
-        # Create a new layer from the blob
         layer = oras.oci.NewLayer(file_path, media_type, is_dir=False)
-        new_layer_size = int(layer["size"])
-        # annotations = annotations.get_annotations(blob)
         layer["annotations"] = {
             oras.defaults.annotation_title: os.path.basename(file_path)
         }
 
-        # update the manifest with the new layer
         manifest["layers"].append(layer)
 
         old_manifest_digest = self.get_digest(manifest_container)
@@ -286,10 +281,6 @@ class Registry(oras.provider.Registry):
     @ensure_container
     def remove_container(self, container):
         self.delete_tag(container.manifest_url())
-
-    @ensure_container
-    def status_manifest(self, container, manifest_id):
-        pass
 
     @ensure_container
     def status_all(self, container):
@@ -404,7 +395,6 @@ class Registry(oras.provider.Registry):
             checksum_sha1 = calculate_sha1(file_path)
             checksum_md5 = calculate_md5(file_path)
 
-            # File Blobs must exist
             if not os.path.exists(file_path):
                 logger.error(f"{file_path} does not exist.")
                 continue
@@ -414,7 +404,6 @@ class Registry(oras.provider.Registry):
                 file_path = oras.utils.make_targz(file_path)
                 cleanup_blob = True
 
-            # Create a new layer from the blob
             layer = oras.oci.NewLayer(file_path, media_type, is_dir=cleanup_blob)
             total_size += int(layer["size"])
 
@@ -427,14 +416,11 @@ class Registry(oras.provider.Registry):
             if annotations:
                 layer["annotations"].update(annotations)
 
-            # update the manifest with the new layer
             manifest_image["layers"].append(layer)
 
-            # Upload the blob layer
             response = self.upload_blob(file_path, container, layer)
             self._check_200_response(response)
 
-            # Do we need to clean up a temporary targz?
             if cleanup_blob and os.path.exists(file_path):
                 os.remove(file_path)
 
