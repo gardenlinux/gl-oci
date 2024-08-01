@@ -190,7 +190,7 @@ class Registry(oras.provider.Registry):
             return None
         if "digest" not in manifest_meta:
             logger.error("No digest found in metadata!")
-        manifest_digest = manifest_meta['digest']
+        manifest_digest = manifest_meta["digest"]
         response = self.get_blob(container, manifest_digest)
         self._check_200_response(response)
         manifest = response.json()
