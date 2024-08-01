@@ -94,6 +94,21 @@ class Registry(oras.provider.Registry):
         self.config_path = config_path
 
     @ensure_container
+    def get_manifest_size(self, container, allowed_media_type=None):
+        if not allowed_media_type:
+            default_image_index_media_type = (
+                "application/vnd.oci.image.manifest.v1+json"
+            )
+            allowed_media_type = [default_image_index_media_type]
+        self.load_configs(container)
+        headers = {"Accept": ";".join(allowed_media_type)}
+        headers.update(self.headers)
+        get_manifest = f"{self.prefix}://{container.manifest_url()}"
+        response = self.do_request(get_manifest, "GET", headers=headers)
+        self._check_200_response(response)
+        return len(response.content)
+
+    @ensure_container
     def get_digest(self, container, allowed_media_type=None):
         if not allowed_media_type:
             default_image_index_media_type = (
@@ -236,10 +251,6 @@ class Registry(oras.provider.Registry):
         manifest_container = oras.container.Container(
             f"{container_name}-{cname}-{architecture}"
         )
-        old_manifest_meta_data = self.get_manifest_meta_data_by_cname(
-            container, cname, architecture
-        )
-        old_size = int(old_manifest_meta_data["size"])
 
         manifest = self.get_manifest_by_cname(container, cname, architecture)
         cur_state = get_image_state(manifest)
@@ -260,13 +271,12 @@ class Registry(oras.provider.Registry):
         old_manifest_digest = self.get_digest(manifest_container)
         self._check_200_response(self.upload_manifest(manifest, manifest_container))
 
-        new_manifest_digest = self.get_digest(manifest_container)
         version = "experimental"
         new_manifest_metadata = self.get_manifest_meta_data_by_cname(
             container, cname, architecture
         )
-        new_manifest_metadata["digest"] = new_manifest_digest
-        new_manifest_metadata["size"] = old_size + new_layer_size
+        new_manifest_metadata["digest"] = self.get_digest(manifest_container)
+        new_manifest_metadata["size"] = self.get_manifest_size(manifest_container)
         new_manifest_metadata["platform"] = NewPlatform(architecture, version)
 
         self.update_index(container, old_manifest_digest, new_manifest_metadata)
@@ -469,7 +479,7 @@ class Registry(oras.provider.Registry):
         manifest_digest = self.get_digest(manifest_container)
         manifest_index_metadata = NewManifestMetadata(
             manifest_digest,
-            total_size,
+            self.get_manifest_size(manifest_container),
             metadata_annotations,
             NewPlatform(architecture, version),
         )
