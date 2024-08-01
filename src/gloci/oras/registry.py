@@ -55,6 +55,20 @@ class ManifestState(Enum):
 setup_logger(quiet=False, debug=True)
 
 
+def attach_state(d: dict, state):
+    d["image_state"] = state
+
+
+def get_image_state(manifest):
+    if "annotations" not in manifest:
+        logger.warning("No annotations set for manifest.")
+        return "UNDEFINED"
+    if "image_state" not in manifest["annotations"]:
+        logger.warning("No image_state set for manifest.")
+        return "UNDEFINED"
+    return manifest["annotations"]["image_state"]
+
+
 def get_uri_for_digest(uri, digest):
     """
     Given a URI for an image, return a URI for the related digest.
@@ -150,14 +164,12 @@ class Registry(oras.provider.Registry):
         Will return None if no result was found
         """
         index = self.get_index(container, allowed_media_type)
-        logger.debug(index)
 
         if "manifests" not in index:
             logger.debug("Index is empty")
             return None
 
         for manifest_meta in index["manifests"]:
-            logger.debug(manifest_meta)
             if "annotations" not in manifest_meta:
                 logger.debug("Manifest annotations was none, which is invalid")
                 return None
@@ -179,6 +191,18 @@ class Registry(oras.provider.Registry):
         return None
 
     @ensure_container
+    def get_manifest_by_digest(self, container, digest, allowed_media_type=None):
+        """
+        Returns the manifest for a cname+arch combination of a container
+        Will return None if no result was found
+        """
+        response = self.get_blob(container, digest)
+        self._check_200_response(response)
+        manifest = response.json()
+        jsonschema.validate(manifest, schema=oras.schemas.manifest)
+        return manifest
+
+    @ensure_container
     def get_manifest_by_cname(self, container, cname, arch, allowed_media_type=None):
         """
         Returns the manifest for a cname+arch combination of a container
@@ -191,11 +215,7 @@ class Registry(oras.provider.Registry):
         if "digest" not in manifest_meta:
             logger.error("No digest found in metadata!")
         manifest_digest = manifest_meta["digest"]
-        response = self.get_blob(container, manifest_digest)
-        self._check_200_response(response)
-        manifest = response.json()
-        jsonschema.validate(manifest, schema=oras.schemas.manifest)
-        return manifest
+        return self.get_manifest_by_digest(container, manifest_digest)
 
     @ensure_container
     def update_index(self, container, old_digest, manifest_meta_data):
@@ -217,10 +237,19 @@ class Registry(oras.provider.Registry):
         if not updated:
             index["manifests"].append(manifest_meta_data)
 
-        logger.debug("New Index:")
-        logger.debug(index)
         response = self.upload_index(index, container)
         self._check_200_response(response)
+
+    def change_state(self, container_name, cname, architecture, new_state):
+        manifest_container = oras.container.Container(
+            f"{container_name}-{cname}-{architecture}"
+        )
+        manifest = self.get_manifest_by_cname(manifest_container, cname, architecture)
+
+        if "annotations" not in manifest:
+            logger.warning("No annotations found in manifest, init annotations now.")
+            manifest["annotations"] = {}
+        attach_state(manifest["annotations"], new_state)
 
     def attach_layer(self, container_name, cname, architecture, file_path, media_type):
 
@@ -235,7 +264,6 @@ class Registry(oras.provider.Registry):
         )
 
         manifest = self.get_manifest_by_cname(container, cname, architecture)
-        logger.debug(manifest)
 
         # Create a new layer from the blob
         layer = oras.oci.NewLayer(file_path, media_type, is_dir=False)
@@ -250,11 +278,9 @@ class Registry(oras.provider.Registry):
         manifest["layers"].append(layer)
 
         old_manifest_digest = self.get_digest(manifest_container)
-        logger.debug(f"old manifest digest is: {old_manifest_digest}")
         self._check_200_response(self.upload_manifest(manifest, manifest_container))
 
         new_manifest_digest = self.get_digest(manifest_container)
-        logger.debug(f"new manifest digest is: {new_manifest_digest}")
         # TODO: calc size
         new_size = 0
         version = "experimental"
@@ -287,6 +313,15 @@ class Registry(oras.provider.Registry):
         - all mediatypes of layers listed in info.yaml must be set correctly
         """
         index = self.get_index(container)
+
+        if "manifests" not in index:
+            logger.info("No manifests in index")
+            return
+        for manifest_meta in index["manifests"]:
+            manifest_digest = manifest_meta["digest"]
+            manifest = self.get_manifest_by_digest(container, manifest_digest)
+            image_state = get_image_state(manifest)
+            print(f"{manifest_digest}:\t{image_state}")
 
     def upload_index(
         self, index: dict, container: oras.container.Container
@@ -369,8 +404,6 @@ class Registry(oras.provider.Registry):
 
         manifest_image = oras.oci.NewManifest()
 
-        missing_layer_detected = False
-
         for artifact in info_data["oci_artifacts"]:
             file_name = artifact["file_name"]
             media_type = artifact["media_type"]
@@ -381,11 +414,10 @@ class Registry(oras.provider.Registry):
             checksum_sha256 = calculate_sha256(file_path)
             checksum_sha1 = calculate_sha1(file_path)
             checksum_md5 = calculate_md5(file_path)
+
             # File Blobs must exist
             if not os.path.exists(file_path):
-                logger.info(f"{file_path} does not exist.")
-                # TODO: Set Status of manifest to incomplete layers
-                missing_layer_detected = True
+                logger.error(f"{file_path} does not exist.")
                 continue
 
             cleanup_blob = False
@@ -395,7 +427,6 @@ class Registry(oras.provider.Registry):
 
             # Create a new layer from the blob
             layer = oras.oci.NewLayer(file_path, media_type, is_dir=cleanup_blob)
-            # annotations = annotations.get_annotations(blob)
 
             layer["annotations"] = {
                 oras.defaults.annotation_title: file_name,
@@ -421,6 +452,8 @@ class Registry(oras.provider.Registry):
             info_yaml, "application/vnd.gardenlinux.metadata.info", is_dir=False
         )
         manifest_image["layers"].append(layer)
+        manifest_image["annotations"] = {}
+        attach_state(manifest_image["annotations"], "UNTESTED")
 
         assert container is not None, "error: container is none"
         assert layer is not None, "error: layer is none"
@@ -446,19 +479,11 @@ class Registry(oras.provider.Registry):
             self.upload_manifest(manifest_image, manifest_container)
         )
 
-        # If we would re-upload the manifest with a new digest,
-        # the registry calculates a new digest including the new attribute..
-        # so we can NOT include digest to manifest
-        #
-        # manifest_image["digest"] = self.get_digest(manifest_container)
-        # self._check_200_response(
-        #    self.upload_manifest(manifest_image, manifest_container)
-        # )
-
         # attach Manifest to oci-index
         metadata_annotations = {}
         metadata_annotations["cname"] = cname
         metadata_annotations["architecture"] = architecture
+        attach_state(metadata_annotations, "UNTESTED")
         version = "experimental"
         manifest_digest = self.get_digest(manifest_container)
         manifest_index_metadata = NewManifestMetadata(

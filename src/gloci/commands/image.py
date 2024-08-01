@@ -1,8 +1,5 @@
 # my_project/commands/image.py
 import click
-import yaml
-import os
-import json
 import oras.client
 import oras.container
 from gloci.oras.registry import Registry as GlociRegistry
@@ -93,7 +90,7 @@ def status(container):
     click.echo(f"Requesting status of {container}")
     container = oras.container.Container(container)
     registry = GlociRegistry(container.registry)
-    pprint.pprint(registry.status_all(container), compact=True)
+    registry.status_all(container)
 
 
 @image.command()
