@@ -217,6 +217,8 @@ class Registry(oras.provider.Registry):
         if not updated:
             index["manifests"].append(manifest_meta_data)
 
+        logger.debug("New Index:")
+        logger.debug(index)
         response = self.upload_index(index, container)
         self._check_200_response(response)
 
@@ -337,9 +339,9 @@ class Registry(oras.provider.Registry):
         conf["digest"] = f"sha256:{oras.utils.get_file_hash(config_path)}"
         return conf, config_path
 
-    def _get_index(self, container):
+    def init_index(self, container):
         """
-        Ensures an oci index exists for the container, and returns it
+        Ensures an oci index exists for the container
         """
         image_index = self.get_index(
             container, allowed_media_type="application/vnd.oci.image.index.v1+json"
@@ -353,8 +355,6 @@ class Registry(oras.provider.Registry):
         else:
             logger.debug("Image Index does exist, using existing image index")
 
-        return image_index
-
     def push_image_manifest(self, container_name, architecture, cname, info_yaml):
         """
         creates and pushes an image manifest
@@ -365,7 +365,7 @@ class Registry(oras.provider.Registry):
             info_data = yaml.safe_load(f)
             base_path = os.path.join(os.path.dirname(info_yaml))
 
-        image_index = self._get_index(container)
+        self.init_index(container)
 
         manifest_image = oras.oci.NewManifest()
 
@@ -468,8 +468,5 @@ class Registry(oras.provider.Registry):
             NewPlatform(architecture, version),
         )
         self.update_index(container, None, manifest_index_metadata)
-        jsonschema.validate(image_index, schema=indexSchema)
-        response = self.upload_index(image_index, container)
-        self._check_200_response(response)
         print(f"Successfully pushed {container}")
         return response
