@@ -1,5 +1,3 @@
-import pprint
-
 import oras.oci
 import oras.defaults
 import oras.provider
@@ -17,9 +15,7 @@ import hashlib
 import copy
 import yaml
 import uuid
-import re
 from enum import Enum, auto
-from hashlib import sha256
 
 from gloci.oras.crypto import calculate_sha1, calculate_md5, calculate_sha256
 from gloci.oras.schemas import index as indexSchema
@@ -69,20 +65,6 @@ def get_image_state(manifest):
     return manifest["annotations"]["image_state"]
 
 
-def get_uri_for_digest(uri, digest):
-    """
-    Given a URI for an image, return a URI for the related digest.
-
-    URI may be in any of the following forms:
-
-        ghcr.io/homebrew/core/hello
-        ghcr.io/homebrew/core/hello:2.10
-        ghcr.io/homebrew/core/hello@sha256:ff81...47a
-    """
-    base_uri = re.split(r"[@:]", uri, maxsplit=1)[0]
-    return f"{base_uri}@{digest}"
-
-
 def NewPlatform(architecture, version) -> dict:
     platform = copy.deepcopy(EmptyPlatform)
     platform["architecture"] = architecture
@@ -125,13 +107,6 @@ class Registry(oras.provider.Registry):
         response = self.do_request(get_manifest, "GET", headers=headers)
         self._check_200_response(response)
         return f"sha256:{hashlib.sha256(response.content).hexdigest()}"
-
-    def calculate_manifest_digest(self, manifest_image):
-        # Make sure manifest contains required attributes
-        jsonschema.validate(manifest_image, schema=oras.schemas.manifest)
-        content = json.dumps(manifest_image, sort_keys=True).encode()
-        digest = sha256(content).hexdigest()
-        return f"sha256:{digest}"
 
     @ensure_container
     def get_index(self, container, allowed_media_type=None):
@@ -252,7 +227,6 @@ class Registry(oras.provider.Registry):
         attach_state(manifest["annotations"], new_state)
 
     def attach_layer(self, container_name, cname, architecture, file_path, media_type):
-
         # File Blobs must exist
         if not os.path.exists(file_path):
             logger.exit(f"{file_path} does not exist.")
@@ -262,17 +236,23 @@ class Registry(oras.provider.Registry):
         manifest_container = oras.container.Container(
             f"{container_name}-{cname}-{architecture}"
         )
+        old_manifest_meta_data = self.get_manifest_meta_data_by_cname(
+            container, cname, architecture
+        )
+        old_size = int(old_manifest_meta_data["size"])
 
         manifest = self.get_manifest_by_cname(container, cname, architecture)
+        cur_state = get_image_state(manifest)
+        if cur_state == "SIGNED":
+            logger.exit("Manifest is already signed. Manifest is read-only now")
 
         # Create a new layer from the blob
         layer = oras.oci.NewLayer(file_path, media_type, is_dir=False)
+        new_layer_size = int(layer["size"])
         # annotations = annotations.get_annotations(blob)
         layer["annotations"] = {
             oras.defaults.annotation_title: os.path.basename(file_path)
         }
-        # if annotations:
-        #    layer["annotations"].update(annotations)
 
         # update the manifest with the new layer
         manifest["layers"].append(layer)
@@ -281,14 +261,12 @@ class Registry(oras.provider.Registry):
         self._check_200_response(self.upload_manifest(manifest, manifest_container))
 
         new_manifest_digest = self.get_digest(manifest_container)
-        # TODO: calc size
-        new_size = 0
         version = "experimental"
         new_manifest_metadata = self.get_manifest_meta_data_by_cname(
             container, cname, architecture
         )
         new_manifest_metadata["digest"] = new_manifest_digest
-        new_manifest_metadata["size"] = new_size
+        new_manifest_metadata["size"] = old_size + new_layer_size
         new_manifest_metadata["platform"] = NewPlatform(architecture, version)
 
         self.update_index(container, old_manifest_digest, new_manifest_metadata)
@@ -403,6 +381,7 @@ class Registry(oras.provider.Registry):
         self.init_index(container)
 
         manifest_image = oras.oci.NewManifest()
+        total_size = 0
 
         for artifact in info_data["oci_artifacts"]:
             file_name = artifact["file_name"]
@@ -427,6 +406,7 @@ class Registry(oras.provider.Registry):
 
             # Create a new layer from the blob
             layer = oras.oci.NewLayer(file_path, media_type, is_dir=cleanup_blob)
+            total_size += int(layer["size"])
 
             layer["annotations"] = {
                 oras.defaults.annotation_title: file_name,
@@ -451,6 +431,7 @@ class Registry(oras.provider.Registry):
         layer = oras.oci.NewLayer(
             info_yaml, "application/vnd.gardenlinux.metadata.info", is_dir=False
         )
+        total_size += int(layer["size"])
         manifest_image["layers"].append(layer)
         manifest_image["annotations"] = {}
         attach_state(manifest_image["annotations"], "UNTESTED")
@@ -488,7 +469,7 @@ class Registry(oras.provider.Registry):
         manifest_digest = self.get_digest(manifest_container)
         manifest_index_metadata = NewManifestMetadata(
             manifest_digest,
-            0,
+            total_size,
             metadata_annotations,
             NewPlatform(architecture, version),
         )
