@@ -41,3 +41,6 @@ example:
 	$(PYTHON) -m gloci.cli image inspect --container  localhost:8081/$(EXAMPLECONTAINERNAME):latest --cname yolo-example_dev --architecture arm64 
 	@echo "=== Inspect single manigest"
 	$(PYTHON) -m gloci.cli image inspect --container  localhost:8081/$(EXAMPLECONTAINERNAME):latest --cname yolo-example_dev --architecture amd64
+
+clean:
+	rm -rf output gl-oci.log
