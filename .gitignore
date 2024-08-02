@@ -1,4 +1,6 @@
 output
+token.sh
+.env
 .venv
 example.manifest.json
 *.pyc

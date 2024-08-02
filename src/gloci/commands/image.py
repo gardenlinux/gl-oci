@@ -1,9 +1,10 @@
 # my_project/commands/image.py
 import json
+import os
 import click
 import oras.client
 import oras.container
-from gloci.oras.registry import Registry as GlociRegistry
+from gloci.oras.registry import GlociRegistry
 import pprint
 
 
@@ -38,7 +39,11 @@ def image():
 )
 def push(container_name, architecture, cname, info_yaml):
     container = oras.container.Container(container_name)
-    registry = GlociRegistry(container.registry)
+    registry = GlociRegistry(
+        container.registry,
+        os.getenv("GLOCI_REGISTRY_USERNAME"),
+        os.getenv("GLOCI_REGISTRY_TOKEN"),
+    )
     registry.push_image_manifest(container_name, architecture, cname, info_yaml)
     click.echo(f"Pushed {container_name}")
 

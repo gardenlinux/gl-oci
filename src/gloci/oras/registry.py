@@ -1,9 +1,17 @@
+import base64
+
 import oras.oci
 import oras.defaults
+import oras.auth
 import oras.provider
 import oras.client
 import oras.utils
 from oras.decorator import ensure_container
+from oras.provider import Registry
+
+from typing import Callable, Generator, List, Optional, Tuple, Union
+from http.cookiejar import DefaultCookiePolicy
+
 
 import logging
 import jsonschema
@@ -11,6 +19,7 @@ import json
 import requests
 
 import os
+import sys
 import hashlib
 import copy
 import yaml
@@ -49,7 +58,8 @@ class ManifestState(Enum):
 
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename="gl-oci.log", level=logging.DEBUG)
+#logging.basicConfig(filename="gl-oci.log", level=logging.DEBUG)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
 def attach_state(d: dict, state):
@@ -88,11 +98,18 @@ def NewIndex() -> dict:
     return copy.deepcopy(EmptyIndex)
 
 
-class Registry(oras.provider.Registry):
-    def __init__(self, registry_url, config_path=None):
+class GlociRegistry(Registry):
+    def __init__(self, registry_url, username=None, token=None, config_path=None):
         super().__init__(insecure=True)
         self.registry_url = registry_url
         self.config_path = config_path
+        if not token:
+            logger.error("No Token provided")
+        else:
+            self.token = base64.b64encode(token.encode()).decode("utf-8")
+            self.session.cookies.set_policy(DefaultCookiePolicy(allowed_domains=[]))
+            self.username = username
+            self.set_token_auth(self.token)
 
     @ensure_container
     def get_manifest_size(self, container, allowed_media_type=None):
@@ -365,10 +382,14 @@ class Registry(oras.provider.Registry):
         )
 
         if image_index is None:
+            logger.debug("Initializing new Index")
             image_index = NewIndex()
             jsonschema.validate(image_index, schema=indexSchema)
+            logger.debug("Index Validated")
             response = self.upload_index(image_index, container)
             self._check_200_response(response)
+            logger.debug("uploaded index ")
+
         else:
             logger.debug("Image Index does exist, using existing image index")
 
@@ -382,7 +403,9 @@ class Registry(oras.provider.Registry):
             info_data = yaml.safe_load(f)
             base_path = os.path.join(os.path.dirname(info_yaml))
 
+        logger.debug("initilializing index..")
         self.init_index(container)
+        logger.debug("done initializing index.")
 
         manifest_image = oras.oci.NewManifest()
         total_size = 0
