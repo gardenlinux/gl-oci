@@ -49,7 +49,7 @@ class ManifestState(Enum):
 
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename="gl-ci.log", level=logging.DEBUG)
+logging.basicConfig(filename="gl-oci.log", level=logging.DEBUG)
 
 
 def attach_state(d: dict, state):
@@ -220,12 +220,14 @@ class Registry(oras.provider.Registry):
         updated = False
         if old_digest is not None:
             for i, manifest in enumerate(index["manifests"]):
+                print(f"old_digest: {old_digest} =? {manifest['digest']}")
                 if manifest["digest"] == old_digest:
                     logger.debug("Found old manifest entry")
                     index["manifests"][i] = manifest_meta_data
                     updated = True
                     break
         if not updated:
+            logger.debug("Did NOT find old manifest entry")
             index["manifests"].append(manifest_meta_data)
 
         response = self.upload_index(index, container)
@@ -470,6 +472,16 @@ class Registry(oras.provider.Registry):
             metadata_annotations,
             NewPlatform(architecture, version),
         )
-        self.update_index(container, None, manifest_index_metadata)
+
+        old_manifest_meta_data = self.get_manifest_meta_data_by_cname(
+            container, cname, architecture
+        )
+        if old_manifest_meta_data is not None:
+            self.update_index(
+                container, old_manifest_meta_data["digest"], manifest_index_metadata
+            )
+        else:
+            self.update_index(container, None, manifest_index_metadata)
+
         print(f"Successfully pushed {container}")
         return response
