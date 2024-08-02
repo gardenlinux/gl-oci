@@ -49,7 +49,8 @@ class ManifestState(Enum):
 
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename='gl-ci.log', level=logging.DEBUG)
+logging.basicConfig(filename="gl-ci.log", level=logging.DEBUG)
+
 
 def attach_state(d: dict, state):
     d["image_state"] = state

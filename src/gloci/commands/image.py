@@ -96,9 +96,11 @@ def inspect(container, cname, architecture):
     """inspect container"""
     container = oras.container.Container(container)
     registry = GlociRegistry(container.registry)
-    print(json.dumps(
-        registry.get_manifest_by_cname(container, cname, architecture), indent=4
-    ))
+    print(
+        json.dumps(
+            registry.get_manifest_by_cname(container, cname, architecture), indent=4
+        )
+    )
 
 
 @image.command()
@@ -107,7 +109,7 @@ def inspect_index(container):
     """inspects complete index"""
     container = oras.container.Container(container)
     registry = GlociRegistry(container.registry)
-    json.dumps(registry.get_index(container), indent=4)
+    print(json.dumps(registry.get_index(container), indent=4))
 
 
 @image.command()
