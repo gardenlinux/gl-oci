@@ -35,3 +35,24 @@ index = {
     "properties": indexProperties,
     "additionalProperties": True,
 }
+
+EmptyPlatform = {
+    "architecture": "",
+    "os": "gardenlinux",
+    "os.version": "experimental",
+}
+
+EmptyManifestMetadata = {
+    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+    "digest": "",
+    "size": 0,
+    "annotations": {},
+    "artifactType": "",
+}
+
+EmptyIndex = {
+    "schemaVersion": 2,
+    "mediaType": "application/vnd.oci.image.index.v1+json",
+    "manifests": [],
+    "annotations": {},
+}
