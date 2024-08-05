@@ -1,5 +1,7 @@
 import base64
 
+import traceback
+
 import oras.oci
 import oras.defaults
 import oras.auth
@@ -27,28 +29,12 @@ import uuid
 from enum import Enum, auto
 
 from gloci.oras.crypto import calculate_sha1, calculate_md5, calculate_sha256
-from gloci.oras.schemas import index as indexSchema
-
-EmptyPlatform = {
-    "architecture": "",
-    "os": "gardenlinux",
-    "os.version": "experimental",
-}
-
-EmptyManifestMetadata = {
-    "mediaType": "application/vnd.oci.image.manifest.v1+json",
-    "digest": "",
-    "size": 0,
-    "annotations": {},
-    "artifactType": "",
-}
-
-EmptyIndex = {
-    "schemaVersion": 2,
-    "mediaType": "application/vnd.oci.image.index.v1+json",
-    "manifests": [],
-    "annotations": {},
-}
+from gloci.oras.schemas import (
+    index as indexSchema,
+    EmptyManifestMetadata,
+    EmptyIndex,
+    EmptyPlatform,
+)
 
 
 class ManifestState(Enum):
@@ -58,7 +44,7 @@ class ManifestState(Enum):
 
 
 logger = logging.getLogger(__name__)
-#logging.basicConfig(filename="gl-oci.log", level=logging.DEBUG)
+# logging.basicConfig(filename="gl-oci.log", level=logging.DEBUG)
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
@@ -98,9 +84,44 @@ def NewIndex() -> dict:
     return copy.deepcopy(EmptyIndex)
 
 
+def _check_if_manifest_exists(index, manifest_meta):
+    if index is None:
+        return False
+
+    if index["manifests"] is None:
+        return False
+
+    for manifest in index["manifests"]:
+        if manifest == manifest_meta:
+            return True
+
+    return False
+
+
+def create_config_from_dict(conf: dict, annotations: dict):
+    """
+    Write a new OCI configuration to file, and generate oci meta data for it
+    For reference see https://github.com/opencontainers/image-spec/blob/main/config.md
+    annotations, mediatrype, size, digest are not part of digest and size calculation,
+    and therefore must be attached to the output dict and not written to the file.
+
+    :param conf: dict with custom configuration (the payload of the configuration)
+    :param annotations: dict with custom annotations to be attached to metadata part of config
+
+    """
+    config_path = os.path.join(os.path.curdir, str(uuid.uuid4()))
+    with open(config_path, "w") as fp:
+        json.dump(conf, fp)
+    conf["annotations"] = annotations
+    conf["mediaType"] = oras.defaults.unknown_config_media_type
+    conf["size"] = oras.utils.get_size(config_path)
+    conf["digest"] = f"sha256:{oras.utils.get_file_hash(config_path)}"
+    return conf, config_path
+
+
 class GlociRegistry(Registry):
     def __init__(self, registry_url, username=None, token=None, config_path=None):
-        super().__init__(insecure=True)
+        super().__init__(insecure=False)
         self.registry_url = registry_url
         self.config_path = config_path
         if not token:
@@ -112,33 +133,33 @@ class GlociRegistry(Registry):
             self.set_token_auth(self.token)
 
     @ensure_container
-    def get_manifest_size(self, container, allowed_media_type=None):
+    def get_manifest_json(self, container, allowed_media_type=None):
         if not allowed_media_type:
             default_image_index_media_type = (
                 "application/vnd.oci.image.manifest.v1+json"
             )
             allowed_media_type = [default_image_index_media_type]
+        logger.debug("get manifest")
         self.load_configs(container)
         headers = {"Accept": ";".join(allowed_media_type)}
         headers.update(self.headers)
         get_manifest = f"{self.prefix}://{container.manifest_url()}"
         response = self.do_request(get_manifest, "GET", headers=headers)
         self._check_200_response(response)
+        return response
+
+    @ensure_container
+    def get_manifest_size(self, container, allowed_media_type=None):
+        response = self.get_manifest_json(container, allowed_media_type)
+        if response is None:
+            return 0
         return len(response.content)
 
     @ensure_container
     def get_digest(self, container, allowed_media_type=None):
-        if not allowed_media_type:
-            default_image_index_media_type = (
-                "application/vnd.oci.image.manifest.v1+json"
-            )
-            allowed_media_type = [default_image_index_media_type]
-        self.load_configs(container)
-        headers = {"Accept": ";".join(allowed_media_type)}
-        headers.update(self.headers)
-        get_manifest = f"{self.prefix}://{container.manifest_url()}"
-        response = self.do_request(get_manifest, "GET", headers=headers)
-        self._check_200_response(response)
+        response = self.get_manifest_json(container, allowed_media_type)
+        if response is None:
+            return ""
         return f"sha256:{hashlib.sha256(response.content).hexdigest()}"
 
     @ensure_container
@@ -146,6 +167,8 @@ class GlociRegistry(Registry):
         """
         Returns the manifest for a cname+arch combination of a container
         Will return None if no result was found
+
+        TODO: refactor: use get_manifest_json and call it with index mediatype.
         """
         if not allowed_media_type:
             default_image_index_media_type = "application/vnd.oci.image.index.v1+json"
@@ -161,7 +184,7 @@ class GlociRegistry(Registry):
 
         except ValueError:
             logger.debug("Index not found")
-            return None
+            return NewIndex()
 
     @ensure_container
     def get_manifest_meta_data_by_cname(
@@ -247,8 +270,7 @@ class GlociRegistry(Registry):
             logger.debug("Did NOT find old manifest entry")
             index["manifests"].append(manifest_meta_data)
 
-        response = self.upload_index(index, container)
-        self._check_200_response(response)
+        return index
 
     def change_state(self, container_name, cname, architecture, new_state):
         manifest_container = oras.container.Container(
@@ -294,7 +316,10 @@ class GlociRegistry(Registry):
         new_manifest_metadata["size"] = self.get_manifest_size(manifest_container)
         new_manifest_metadata["platform"] = NewPlatform(architecture, version)
 
-        self.update_index(container, old_manifest_digest, new_manifest_metadata)
+        new_index = self.update_index(
+            container, old_manifest_digest, new_manifest_metadata
+        )
+        self._check_200_response(self.upload_index(new_index, container))
 
         print(f"Successfully attached {file_path} to {manifest_container}")
 
@@ -332,46 +357,18 @@ class GlociRegistry(Registry):
         }
         tag = container.digest or container.tag
 
+        # TODO (see issue #18): this works with ZOT but fails with ghcr.io
+        # Maybe ghcr.io does not allow pushing index with empty list of manifests?
         index_url = f"{container.registry}/v2/{container.api_prefix}/manifests/{tag}"
-        return self.do_request(
+        print(index)
+        response = self.do_request(
             f"{self.prefix}://{index_url}",  # noqa
             "PUT",
             headers=headers,
             json=index,
         )
-
-    def _check_if_manifest_exists(self, index, manifest_meta):
-        if index is None:
-            return False
-
-        if index["manifests"] is None:
-            return False
-
-        for manifest in index["manifests"]:
-            if manifest == manifest_meta:
-                return True
-
-        return False
-
-    def create_config_from_dict(self, conf: dict, annotations: dict):
-        """
-        Write a new OCI configuration to file, and generate oci meta data for it
-        For reference see https://github.com/opencontainers/image-spec/blob/main/config.md
-        annotations, mediatrype, size, digest are not part of digest and size calculation,
-        and therefore must be attached to the output dict and not written to the file.
-
-        :param conf: dict with custom configuration (the payload of the configuration)
-        :param annotations: dict with custom annotations to be attached to metadata part of config
-
-        """
-        config_path = os.path.join(os.path.curdir, str(uuid.uuid4()))
-        with open(config_path, "w") as fp:
-            json.dump(conf, fp)
-        conf["annotations"] = annotations
-        conf["mediaType"] = oras.defaults.unknown_config_media_type
-        conf["size"] = oras.utils.get_size(config_path)
-        conf["digest"] = f"sha256:{oras.utils.get_file_hash(config_path)}"
-        return conf, config_path
+        logger.debug(response.content)
+        return response
 
     def init_index(self, container):
         """
@@ -386,12 +383,9 @@ class GlociRegistry(Registry):
             image_index = NewIndex()
             jsonschema.validate(image_index, schema=indexSchema)
             logger.debug("Index Validated")
-            response = self.upload_index(image_index, container)
-            self._check_200_response(response)
-            logger.debug("uploaded index ")
-
         else:
             logger.debug("Image Index does exist, using existing image index")
+        return image_index
 
     def push_image_manifest(self, container_name, architecture, cname, info_yaml):
         """
@@ -403,9 +397,9 @@ class GlociRegistry(Registry):
             info_data = yaml.safe_load(f)
             base_path = os.path.join(os.path.dirname(info_yaml))
 
-        logger.debug("initilializing index..")
-        self.init_index(container)
-        logger.debug("done initializing index.")
+        # logger.debug("initilializing index..")
+        # self.init_index(container)
+        # logger.debug("done initializing index.")
 
         manifest_image = oras.oci.NewManifest()
         total_size = 0
@@ -444,9 +438,11 @@ class GlociRegistry(Registry):
 
             manifest_image["layers"].append(layer)
 
+            logger.debug("Uploading blob..")
+            logger.debug(layer)
             response = self.upload_blob(file_path, container, layer)
+            logger.debug("Checking response after uploading blob..")
             self._check_200_response(response)
-
             if cleanup_blob and os.path.exists(file_path):
                 os.remove(file_path)
 
@@ -463,12 +459,11 @@ class GlociRegistry(Registry):
         response = self.upload_blob(info_yaml, container, layer)
         self._check_200_response(response)
 
-        config_annotations = {}
-        config_annotations["cname"] = cname
-        config_annotations["architecture"] = architecture
-        conf, config_file = self.create_config_from_dict(dict(), config_annotations)
+        config_annotations = {"cname": cname, "architecture": architecture}
+        conf, config_file = create_config_from_dict(dict(), config_annotations)
 
         response = self.upload_blob(config_file, container, conf)
+
         os.remove(config_file)
         self._check_200_response(response)
 
@@ -483,9 +478,7 @@ class GlociRegistry(Registry):
         )
 
         # attach Manifest to oci-index
-        metadata_annotations = {}
-        metadata_annotations["cname"] = cname
-        metadata_annotations["architecture"] = architecture
+        metadata_annotations = {"cname": cname, "architecture": architecture}
         attach_state(metadata_annotations, "UNTESTED")
         version = "experimental"
         manifest_digest = self.get_digest(manifest_container)
@@ -500,11 +493,15 @@ class GlociRegistry(Registry):
             container, cname, architecture
         )
         if old_manifest_meta_data is not None:
-            self.update_index(
+            new_index = self.update_index(
                 container, old_manifest_meta_data["digest"], manifest_index_metadata
             )
+            print(new_index)
         else:
-            self.update_index(container, None, manifest_index_metadata)
+            new_index = self.update_index(container, None, manifest_index_metadata)
+            print(new_index)
+
+        self._check_200_response(self.upload_index(new_index, container))
 
         print(f"Successfully pushed {container}")
         return response
