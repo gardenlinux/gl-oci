@@ -130,7 +130,6 @@ class GlociRegistry(Registry):
             self.token = base64.b64encode(token.encode("utf-8")).decode("utf-8")
             self.auth.set_token_auth(self.token)
 
-
     @ensure_container
     def get_manifest_json(self, container, allowed_media_type=None):
         if not allowed_media_type:
@@ -139,7 +138,7 @@ class GlociRegistry(Registry):
             )
             allowed_media_type = [default_image_index_media_type]
         logger.debug("get manifest")
-        #self.load_configs(container)
+        # self.load_configs(container)
         headers = {"Accept": ";".join(allowed_media_type)}
         headers.update(self.headers)
         get_manifest = f"{self.prefix}://{container.manifest_url()}"
