@@ -39,10 +39,18 @@ def image():
 )
 def push(container_name, architecture, cname, info_yaml):
     container = oras.container.Container(container_name)
+    username = os.getenv("GLOCI_REGISTRY_USERNAME")
+    token = os.getenv("GLOCI_REGISTRY_TOKEN")
+    if username is None:
+        click.echo("No username")
+        exit(-1)
+    if token is None:
+        click.echo("No token")
+        exit(-1)
     registry = GlociRegistry(
         container.registry,
-        os.getenv("GLOCI_REGISTRY_USERNAME"),
-        os.getenv("GLOCI_REGISTRY_TOKEN"),
+        username,
+        token,
     )
     registry.push_image_manifest(container_name, architecture, cname, info_yaml)
     click.echo(f"Pushed {container_name}")

@@ -5,6 +5,10 @@ PYTHON := python3
 #EXAMPLECONTAINERNAME := ghcr.io/gardenlinux/gl-oci
 CONTAINER_NAME_example-zot := localhost:8081/examplecontainer2
 CONTAINER_NAME_example-ghcr := ghcr.io/gardenlinux/gl-oci
+ifneq (,$(wildcard ./.env))
+    include .env
+    export
+endif
 
 serve-oci:
 	zot serve $(ZOT_CONFIG_FILE)
