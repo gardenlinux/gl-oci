@@ -121,16 +121,14 @@ def create_config_from_dict(conf: dict, annotations: dict):
 
 class GlociRegistry(Registry):
     def __init__(self, registry_url, username=None, token=None, config_path=None):
-        super().__init__(insecure=False)
+        super().__init__(auth_backend="token", insecure=False)
         self.registry_url = registry_url
         self.config_path = config_path
         if not token:
             logger.error("No Token provided")
         else:
-            self.token = base64.b64encode(token.encode()).decode("utf-8")
-            self.session.cookies.set_policy(DefaultCookiePolicy(allowed_domains=[]))
-            self.username = username
-            self.set_token_auth(self.token)
+            self.token = base64.b64encode(token.encode("utf-8")).decode("utf-8")
+            self.auth.set_token_auth(self.token)
 
     @ensure_container
     def get_manifest_json(self, container, allowed_media_type=None):
@@ -140,7 +138,7 @@ class GlociRegistry(Registry):
             )
             allowed_media_type = [default_image_index_media_type]
         logger.debug("get manifest")
-        self.load_configs(container)
+        # self.load_configs(container)
         headers = {"Accept": ";".join(allowed_media_type)}
         headers.update(self.headers)
         get_manifest = f"{self.prefix}://{container.manifest_url()}"
@@ -439,7 +437,6 @@ class GlociRegistry(Registry):
             manifest_image["layers"].append(layer)
 
             logger.debug("Uploading blob..")
-            logger.debug(layer)
             response = self.upload_blob(file_path, container, layer)
             logger.debug("Checking response after uploading blob..")
             self._check_200_response(response)
