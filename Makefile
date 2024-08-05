@@ -27,7 +27,6 @@ create_venv: ## Create a virtual environment.
 install_deps: ## Install dependencies.
 	$(VENV)/bin/pip install -r requirements.txt
 
-include .env
 
 example-%:
 	@echo "==== DEMO ===="

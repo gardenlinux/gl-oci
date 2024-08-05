@@ -177,7 +177,7 @@ class GlociRegistry(Registry):
 
         except ValueError:
             logger.debug("Index not found")
-            return None
+            return NewIndex()
 
     @ensure_container
     def get_manifest_meta_data_by_cname(
@@ -263,8 +263,7 @@ class GlociRegistry(Registry):
             logger.debug("Did NOT find old manifest entry")
             index["manifests"].append(manifest_meta_data)
 
-        response = self.upload_index(index, container)
-        self._check_200_response(response)
+        return index
 
     def change_state(self, container_name, cname, architecture, new_state):
         manifest_container = oras.container.Container(
@@ -310,7 +309,8 @@ class GlociRegistry(Registry):
         new_manifest_metadata["size"] = self.get_manifest_size(manifest_container)
         new_manifest_metadata["platform"] = NewPlatform(architecture, version)
 
-        self.update_index(container, old_manifest_digest, new_manifest_metadata)
+        new_index = self.update_index(container, old_manifest_digest, new_manifest_metadata)
+        self._check_200_response(self.upload_index(new_index, container))
 
         print(f"Successfully attached {file_path} to {manifest_container}")
 
@@ -349,13 +349,17 @@ class GlociRegistry(Registry):
         tag = container.digest or container.tag
 
         # TODO (see issue #18): this works with ZOT but fails with ghcr.io
+        # Maybe ghcr.io does not allow pushing index with empty list of manifests?
         index_url = f"{container.registry}/v2/{container.api_prefix}/manifests/{tag}"
-        return self.do_request(
+        print(index)
+        response = self.do_request(
             f"{self.prefix}://{index_url}",  # noqa
             "PUT",
             headers=headers,
             json=index,
         )
+        logger.debug(response.content)
+        return response
 
     def init_index(self, container):
         """
@@ -370,12 +374,9 @@ class GlociRegistry(Registry):
             image_index = NewIndex()
             jsonschema.validate(image_index, schema=indexSchema)
             logger.debug("Index Validated")
-            response = self.upload_index(image_index, container)
-            self._check_200_response(response)
-            logger.debug("uploaded index ")
-
         else:
             logger.debug("Image Index does exist, using existing image index")
+        return image_index
 
     def push_image_manifest(self, container_name, architecture, cname, info_yaml):
         """
@@ -388,7 +389,7 @@ class GlociRegistry(Registry):
             base_path = os.path.join(os.path.dirname(info_yaml))
 
         logger.debug("initilializing index..")
-        self.init_index(container)
+        #self.init_index(container)
         logger.debug("done initializing index.")
 
         manifest_image = oras.oci.NewManifest()
@@ -418,11 +419,11 @@ class GlociRegistry(Registry):
             total_size += int(layer["size"])
 
             layer["annotations"] = {
-                oras.defaults.annotation_title: file_name,
-                "application/vnd.gardenlinux.image.checksum.sha256": checksum_sha256,
-                "application/vnd.gardenlinux.image.checksum.sha1": checksum_sha1,
-                "application/vnd.gardenlinux.image.checksum.md5": checksum_md5,
-            }
+                    oras.defaults.annotation_title: file_name,
+                    "application/vnd.gardenlinux.image.checksum.sha256": checksum_sha256,
+                    "application/vnd.gardenlinux.image.checksum.sha1": checksum_sha1,
+                    "application/vnd.gardenlinux.image.checksum.md5": checksum_md5,
+                    }
             if annotations:
                 layer["annotations"].update(annotations)
 
@@ -435,8 +436,8 @@ class GlociRegistry(Registry):
                 os.remove(file_path)
 
         layer = oras.oci.NewLayer(
-            info_yaml, "application/vnd.gardenlinux.metadata.info", is_dir=False
-        )
+                info_yaml, "application/vnd.gardenlinux.metadata.info", is_dir=False
+                )
         total_size += int(layer["size"])
         manifest_image["layers"].append(layer)
         manifest_image["annotations"] = {}
@@ -457,12 +458,12 @@ class GlociRegistry(Registry):
         manifest_image["config"] = conf
 
         manifest_container = oras.container.Container(
-            f"{container_name}-{cname}-{architecture}"
-        )
+                f"{container_name}-{cname}-{architecture}"
+                )
 
         self._check_200_response(
-            self.upload_manifest(manifest_image, manifest_container)
-        )
+                self.upload_manifest(manifest_image, manifest_container)
+                )
 
         # attach Manifest to oci-index
         metadata_annotations = {"cname": cname, "architecture": architecture}
@@ -470,21 +471,26 @@ class GlociRegistry(Registry):
         version = "experimental"
         manifest_digest = self.get_digest(manifest_container)
         manifest_index_metadata = NewManifestMetadata(
-            manifest_digest,
-            self.get_manifest_size(manifest_container),
-            metadata_annotations,
-            NewPlatform(architecture, version),
-        )
+                manifest_digest,
+                self.get_manifest_size(manifest_container),
+                metadata_annotations,
+                NewPlatform(architecture, version),
+                )
 
         old_manifest_meta_data = self.get_manifest_meta_data_by_cname(
-            container, cname, architecture
-        )
+                container, cname, architecture
+                )
         if old_manifest_meta_data is not None:
-            self.update_index(
-                container, old_manifest_meta_data["digest"], manifest_index_metadata
-            )
+            new_index = self.update_index(
+                    container, old_manifest_meta_data["digest"], manifest_index_metadata
+                    )
+            print(new_index)
         else:
-            self.update_index(container, None, manifest_index_metadata)
+            new_index = self.update_index(container, None, manifest_index_metadata)
+            print(new_index)
+
+        self._check_200_response(self.upload_index(new_index, container))
+
 
         print(f"Successfully pushed {container}")
         return response
