@@ -30,6 +30,7 @@ def setup_registry(container, container_name):
         token,
     )
 
+
 @image.command()
 @click.option(
     "--container",
@@ -97,7 +98,9 @@ def remove():
 
 
 @image.command()
-@click.option("--container","container_name", required=True, help="oci image reference")
+@click.option(
+    "--container", "container_name", required=True, help="oci image reference"
+)
 def status(container_name):
     """Get status of image"""
     container = oras.container.Container(container_name)
@@ -106,7 +109,9 @@ def status(container_name):
 
 
 @image.command()
-@click.option("--container", "container_name", required=True, help="oci image reference")
+@click.option(
+    "--container", "container_name", required=True, help="oci image reference"
+)
 @click.option("--cname", required=True, help="cname of image")
 @click.option("--architecture", required=True, help="architecture of image")
 def inspect(container_name, cname, architecture):
@@ -121,7 +126,9 @@ def inspect(container_name, cname, architecture):
 
 
 @image.command()
-@click.option("--container", "container_name", required=True, help="oci image reference")
+@click.option(
+    "--container", "container_name", required=True, help="oci image reference"
+)
 def inspect_index(container_name):
     """inspects complete index"""
     container = oras.container.Container(container_name)
