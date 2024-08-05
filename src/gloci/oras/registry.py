@@ -1,5 +1,7 @@
 import base64
 
+import traceback
+
 import oras.oci
 import oras.defaults
 import oras.auth
@@ -114,7 +116,7 @@ def create_config_from_dict(conf: dict, annotations: dict):
 
 class GlociRegistry(Registry):
     def __init__(self, registry_url, username=None, token=None, config_path=None):
-        super().__init__(insecure=True)
+        super().__init__(insecure=False)
         self.registry_url = registry_url
         self.config_path = config_path
         if not token:
@@ -388,9 +390,9 @@ class GlociRegistry(Registry):
             info_data = yaml.safe_load(f)
             base_path = os.path.join(os.path.dirname(info_yaml))
 
-        logger.debug("initilializing index..")
-        #self.init_index(container)
-        logger.debug("done initializing index.")
+        # logger.debug("initilializing index..")
+        # self.init_index(container)
+        # logger.debug("done initializing index.")
 
         manifest_image = oras.oci.NewManifest()
         total_size = 0
@@ -429,9 +431,11 @@ class GlociRegistry(Registry):
 
             manifest_image["layers"].append(layer)
 
+            logger.debug("Uploading blob..")
+            logger.debug(layer)
             response = self.upload_blob(file_path, container, layer)
+            logger.debug("Checking response after uploading blob..")
             self._check_200_response(response)
-
             if cleanup_blob and os.path.exists(file_path):
                 os.remove(file_path)
 
@@ -452,6 +456,7 @@ class GlociRegistry(Registry):
         conf, config_file = create_config_from_dict(dict(), config_annotations)
 
         response = self.upload_blob(config_file, container, conf)
+
         os.remove(config_file)
         self._check_200_response(response)
 

@@ -4,7 +4,7 @@ PYTHON := python3
 #EXAMPLECONTAINERNAME := localhost:8081/examplecontainer2
 #EXAMPLECONTAINERNAME := ghcr.io/gardenlinux/gl-oci
 CONTAINER_NAME_example-zot := localhost:8081/examplecontainer2
-CONTAINER_NAME_example-ghcr := ghcr.io/gardenlinux/gl-oci
+CONTAINER_NAME_example-ghcr := https://ghcr.io/gardenlinux/gl-oci
 ifneq (,$(wildcard ./.env))
     include .env
     export
@@ -30,6 +30,8 @@ install_deps: ## Install dependencies.
 
 example-%:
 	@echo "==== DEMO ===="
+	@echo "=== Inspect oci-index"
+	$(PYTHON) -m gloci.cli image inspect-index --container $(CONTAINER_NAME_$@):latest
 	@echo "=== Push dummy container 1 arm64"
 	$(PYTHON) -m gloci.cli image push --container $(CONTAINER_NAME_$@):latest --architecture arm64 --cname yolo-example_dev --info_yaml example-data/info_1.yaml
 	@echo "=== Push dummy container 1 amd64"

@@ -14,6 +14,22 @@ def image():
     pass
 
 
+def setup_registry(container, container_name):
+    container = oras.container.Container(container_name)
+    username = os.getenv("GLOCI_REGISTRY_USERNAME")
+    token = os.getenv("GLOCI_REGISTRY_TOKEN")
+    if username is None:
+        click.echo("No username")
+        exit(-1)
+    if token is None:
+        click.echo("No token")
+        exit(-1)
+    return GlociRegistry(
+        container.registry,
+        username,
+        token,
+    )
+
 @image.command()
 @click.option(
     "--container",
@@ -39,19 +55,7 @@ def image():
 )
 def push(container_name, architecture, cname, info_yaml):
     container = oras.container.Container(container_name)
-    username = os.getenv("GLOCI_REGISTRY_USERNAME")
-    token = os.getenv("GLOCI_REGISTRY_TOKEN")
-    if username is None:
-        click.echo("No username")
-        exit(-1)
-    if token is None:
-        click.echo("No token")
-        exit(-1)
-    registry = GlociRegistry(
-        container.registry,
-        username,
-        token,
-    )
+    registry = setup_registry(container, container_name)
     registry.push_image_manifest(container_name, architecture, cname, info_yaml)
     click.echo(f"Pushed {container_name}")
 
@@ -80,7 +84,7 @@ def push(container_name, architecture, cname, info_yaml):
 def attach(container_name, cname, architecture, file_path, media_type):
     """Attach data to an existing image manifest"""
     container = oras.container.Container(container_name)
-    registry = GlociRegistry(container.registry)
+    registry = setup_registry(container, container_name)
 
     registry.attach_layer(container_name, cname, architecture, file_path, media_type)
 
@@ -93,22 +97,22 @@ def remove():
 
 
 @image.command()
-@click.option("--container", required=True, help="oci image reference")
-def status(container):
+@click.option("--container","container_name", required=True, help="oci image reference")
+def status(container_name):
     """Get status of image"""
-    container = oras.container.Container(container)
-    registry = GlociRegistry(container.registry)
+    container = oras.container.Container(container_name)
+    registry = setup_registry(container, container_name)
     registry.status_all(container)
 
 
 @image.command()
-@click.option("--container", required=True, help="oci image reference")
+@click.option("--container", "container_name", required=True, help="oci image reference")
 @click.option("--cname", required=True, help="cname of image")
 @click.option("--architecture", required=True, help="architecture of image")
-def inspect(container, cname, architecture):
+def inspect(container_name, cname, architecture):
     """inspect container"""
-    container = oras.container.Container(container)
-    registry = GlociRegistry(container.registry)
+    container = oras.container.Container(container_name)
+    registry = setup_registry(container, container_name)
     print(
         json.dumps(
             registry.get_manifest_by_cname(container, cname, architecture), indent=4
@@ -117,11 +121,11 @@ def inspect(container, cname, architecture):
 
 
 @image.command()
-@click.option("--container", required=True, help="oci image reference")
-def inspect_index(container):
+@click.option("--container", "container_name", required=True, help="oci image reference")
+def inspect_index(container_name):
     """inspects complete index"""
-    container = oras.container.Container(container)
-    registry = GlociRegistry(container.registry)
+    container = oras.container.Container(container_name)
+    registry = setup_registry(container, container_name)
     print(json.dumps(registry.get_index(container), indent=4))
 
 
