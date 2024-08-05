@@ -132,6 +132,7 @@ class GlociRegistry(Registry):
                 "application/vnd.oci.image.manifest.v1+json"
             )
             allowed_media_type = [default_image_index_media_type]
+        logger.debug("get manifest")
         self.load_configs(container)
         headers = {"Accept": ";".join(allowed_media_type)}
         headers.update(self.headers)
@@ -142,12 +143,16 @@ class GlociRegistry(Registry):
 
     @ensure_container
     def get_manifest_size(self, container, allowed_media_type=None):
-        response = self.get_manifest_json(allowed_media_type, container)
+        response = self.get_manifest_json(container, allowed_media_type)
+        if response is None:
+            return 0
         return len(response.content)
 
     @ensure_container
     def get_digest(self, container, allowed_media_type=None):
-        response = self.get_manifest_json(allowed_media_type, container)
+        response = self.get_manifest_json(container, allowed_media_type)
+        if response is None:
+            return ""
         return f"sha256:{hashlib.sha256(response.content).hexdigest()}"
 
     @ensure_container

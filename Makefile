@@ -30,7 +30,7 @@ example-%:
 	@echo "=== Push dummy container 1 arm64"
 	$(PYTHON) -m gloci.cli image push --container $(CONTAINER_NAME_$@):latest --architecture arm64 --cname yolo-example_dev --info_yaml example-data/info_1.yaml
 	@echo "=== Push dummy container 1 amd64"
-	$(PYTHON) -m gloci.cli image push --container $(CONTAINER_NAME_$@)):latest --architecture amd64 --cname yolo-example_dev --info_yaml example-data/info_1.yaml
+	$(PYTHON) -m gloci.cli image push --container $(CONTAINER_NAME_$@):latest --architecture amd64 --cname yolo-example_dev --info_yaml example-data/info_1.yaml
 	@echo "=== Push dummy container 2 arm64"
 	$(PYTHON) -m gloci.cli image push --container $(CONTAINER_NAME_$@):latest --architecture arm64 --cname yolo2-example_dev --info_yaml example-data/info_2.yaml
 	@echo "=== Push dummy container 2 amd64"
