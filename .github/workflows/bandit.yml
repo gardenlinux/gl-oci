@@ -1,0 +1,37 @@
+name: security checks
+on:
+  push:
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+      - '**/README.md'
+  pull_request:
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+      - '**/README.md'
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install bandit
+
+    - name: Simple bandit security checks
+      run: bandit -ll -ii -r . -f json -o bandit-report.json
+
+    - name: Upload Bandit Scan Artifact
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: bandit-findings
+        path: bandit-report.json
+
