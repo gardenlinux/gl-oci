@@ -212,14 +212,14 @@ class GlociRegistry(Registry):
             if "architecture" not in manifest_meta["annotations"]:
                 logger.debug("architecture annotation was none, which is invalid")
                 return None
-            if "version" not in manifest_meta["annotations"]:
-                logger.debug("version annotation was none, which is invalid")
-                return None
 
+            if "platform" not in manifest_meta:
+                logger.debug("platform data was none, which is invalid")
+                return None
             if (
                 manifest_meta["annotations"]["cname"] == cname
                 and manifest_meta["annotations"]["architecture"] == arch
-                and manifest_meta["annotations"]["version"] == version
+                and manifest_meta["platform"]["os.version"] == version
             ):
                 return manifest_meta
 
@@ -307,7 +307,7 @@ class GlociRegistry(Registry):
         container = oras.container.Container(container_name)
 
         manifest_container = oras.container.Container(
-            f"{container_name}-{version}-{cname}-{architecture}"
+            f"{container_name}-{cname}-{architecture}"
         )
 
         manifest = self.get_manifest_by_cname(container, cname, version, architecture)
