@@ -28,7 +28,7 @@ import yaml
 import uuid
 from enum import Enum, auto
 
-from gloci.oras.crypto import calculate_sha1, calculate_md5, calculate_sha256
+from gloci.oras.crypto import calculate_sha256
 from gloci.oras.schemas import (
     index as indexSchema,
     EmptyManifestMetadata,
@@ -408,7 +408,8 @@ class GlociRegistry(Registry):
         creates and pushes an image manifest
         """
         container = oras.container.Container(container_name)
-        assert info_yaml is not None, "error: info_yaml is None"
+        if info_yaml is None:
+            raise ValueError("error: info_yaml is none")
         with open(info_yaml, "r") as f:
             info_data = yaml.safe_load(f)
             base_path = os.path.join(os.path.dirname(info_yaml))
@@ -428,8 +429,6 @@ class GlociRegistry(Registry):
             file_path = os.path.join(base_path, artifact["file_name"])
 
             checksum_sha256 = calculate_sha256(file_path)
-            checksum_sha1 = calculate_sha1(file_path)
-            checksum_md5 = calculate_md5(file_path)
 
             if not os.path.exists(file_path):
                 logger.error(f"{file_path} does not exist.")
@@ -446,8 +445,6 @@ class GlociRegistry(Registry):
             layer["annotations"] = {
                 oras.defaults.annotation_title: file_name,
                 "application/vnd.gardenlinux.image.checksum.sha256": checksum_sha256,
-                "application/vnd.gardenlinux.image.checksum.sha1": checksum_sha1,
-                "application/vnd.gardenlinux.image.checksum.md5": checksum_md5,
             }
             if annotations:
                 layer["annotations"].update(annotations)
@@ -469,8 +466,10 @@ class GlociRegistry(Registry):
         manifest_image["annotations"] = {}
         attach_state(manifest_image["annotations"], "UNTESTED")
 
-        assert container is not None, "error: container is none"
-        assert layer is not None, "error: layer is none"
+        if container is None:
+            raise ValueError("error: container is none")
+        if layer is None:
+            raise ValueError("error: layer is none")
         response = self.upload_blob(info_yaml, container, layer)
         self._check_200_response(response)
 
