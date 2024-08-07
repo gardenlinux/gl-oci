@@ -1,5 +1,6 @@
 cert
 output
+cert/
 token.sh
 .env
 .venv
