@@ -120,8 +120,10 @@ def create_config_from_dict(conf: dict, annotations: dict):
 
 
 class GlociRegistry(Registry):
-    def __init__(self, registry_url, username=None, token=None, config_path=None):
-        super().__init__(auth_backend="token", insecure=False)
+    def __init__(
+        self, registry_url, username=None, token=None, insecure=False, config_path=None
+    ):
+        super().__init__(auth_backend="token", insecure=insecure)
         self.registry_url = registry_url
         self.config_path = config_path
         if not token:
@@ -221,11 +223,17 @@ class GlociRegistry(Registry):
 
     @ensure_container
     def get_manifest_by_digest(self, container, digest, allowed_media_type=None):
-        """
-        Returns the manifest for a cname+arch combination of a container
-        Will return None if no result was found
-        """
-        response = self.get_blob(container, digest)
+        if not allowed_media_type:
+            default_image_manifest_media_type = (
+                "application/vnd.oci.image.manifest.v1+json"
+            )
+            allowed_media_type = [default_image_manifest_media_type]
+
+        manifest_url = f"{self.prefix}://{container.get_blob_url(digest)}".replace(
+            "/blobs/", "/manifests/"
+        )
+        headers = {"Accept": ";".join(allowed_media_type)}
+        response = self.do_request(manifest_url, "GET", headers=headers, stream=False)
         self._check_200_response(response)
         manifest = response.json()
         jsonschema.validate(manifest, schema=oras.schemas.manifest)
@@ -237,6 +245,11 @@ class GlociRegistry(Registry):
         Returns the manifest for a cname+arch combination of a container
         Will return None if no result was found
         """
+        if not allowed_media_type:
+            default_image_manifest_media_type = (
+                "application/vnd.oci.image.manifest.v1+json"
+            )
+            allowed_media_type = [default_image_manifest_media_type]
         manifest_meta = self.get_manifest_meta_data_by_cname(container, cname, arch)
         if manifest_meta is None:
             logger.error(f"No manifest found for {cname}-{arch}")
@@ -244,7 +257,9 @@ class GlociRegistry(Registry):
         if "digest" not in manifest_meta:
             logger.error("No digest found in metadata!")
         manifest_digest = manifest_meta["digest"]
-        return self.get_manifest_by_digest(container, manifest_digest)
+        return self.get_manifest_by_digest(
+            container, manifest_digest, allowed_media_type=allowed_media_type
+        )
 
     @ensure_container
     def update_index(self, container, old_digest, manifest_meta_data):
@@ -301,11 +316,16 @@ class GlociRegistry(Registry):
             oras.defaults.annotation_title: os.path.basename(file_path)
         }
 
+        self._check_200_response(self.upload_blob(file_path, container, layer))
+
         manifest["layers"].append(layer)
 
+        logger.debug("getting digest..")
         old_manifest_digest = self.get_digest(manifest_container)
+        logger.debug("uploading manifest")
         self._check_200_response(self.upload_manifest(manifest, manifest_container))
 
+        logger.debug("getting manifest meta data..")
         version = "experimental"
         new_manifest_metadata = self.get_manifest_meta_data_by_cname(
             container, cname, architecture
@@ -355,8 +375,6 @@ class GlociRegistry(Registry):
         }
         tag = container.digest or container.tag
 
-        # TODO (see issue #18): this works with ZOT but fails with ghcr.io
-        # Maybe ghcr.io does not allow pushing index with empty list of manifests?
         index_url = f"{container.registry}/v2/{container.api_prefix}/manifests/{tag}"
         print(index)
         response = self.do_request(
