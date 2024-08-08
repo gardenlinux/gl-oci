@@ -360,6 +360,8 @@ class GlociRegistry(Registry):
         new_manifest_metadata["size"] = self.get_manifest_size(manifest_container)
         new_manifest_metadata["platform"] = NewPlatform(architecture, version)
 
+        self.sign_manifest_entry(new_manifest_metadata, version, architecture, cname)
+
         new_index = self.update_index(
             container, old_manifest_digest, new_manifest_metadata
         )
@@ -367,15 +369,23 @@ class GlociRegistry(Registry):
 
         print(f"Successfully attached {file_path} to {manifest_container}")
 
+    def sign_manifest_entry(self, new_manifest_metadata, version, architecture, cname):
+        data_to_sign = f"versio:{version}  cname{cname}  architecture:{architecture}  manifest-size:{new_manifest_metadata['size']}  manifest-digest:{new_manifest_metadata['digest']}"
+        signature = gloci.oras.crypto.sign_data(data_to_sign, self.private_key_path)
+        new_manifest_metadata["annotations"].update({
+            annotation_signature_key: signature,
+            annotation_signed_string_key: data_to_sign,
+        })
+
     def sign_layer(
         self, layer, cname, version, architecture, checksum_sha256, media_type
     ):
         data_to_sign = f"version:{version}  cname:{cname} architecture:{architecture}  media_type:{media_type}  digest:{checksum_sha256}"
         signature = gloci.oras.crypto.sign_data(data_to_sign, self.private_key_path)
-        layer["annotations"] = {
+        layer["annotations"].update({
             annotation_signature_key: signature,
             annotation_signed_string_key: data_to_sign,
-        }
+        })
 
     @ensure_container
     def remove_container(self, container):
@@ -535,7 +545,6 @@ class GlociRegistry(Registry):
             self.upload_manifest(manifest_image, manifest_container)
         )
 
-        # attach Manifest to oci-index
         metadata_annotations = {"cname": cname, "architecture": architecture}
         attach_state(metadata_annotations, "UNTESTED")
         manifest_digest = self.get_digest(manifest_container)
@@ -545,6 +554,7 @@ class GlociRegistry(Registry):
             metadata_annotations,
             NewPlatform(architecture, version),
         )
+        self.sign_manifest_entry(manifest_index_metadata, version, architecture, cname)
 
         old_manifest_meta_data = self.get_manifest_meta_data_by_cname(
             container, cname, version, architecture
@@ -553,10 +563,8 @@ class GlociRegistry(Registry):
             new_index = self.update_index(
                 container, old_manifest_meta_data["digest"], manifest_index_metadata
             )
-            print(new_index)
         else:
             new_index = self.update_index(container, None, manifest_index_metadata)
-            print(new_index)
 
         self._check_200_response(self.upload_index(new_index, container))
 
