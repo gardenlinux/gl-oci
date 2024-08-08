@@ -372,20 +372,24 @@ class GlociRegistry(Registry):
     def sign_manifest_entry(self, new_manifest_metadata, version, architecture, cname):
         data_to_sign = f"versio:{version}  cname{cname}  architecture:{architecture}  manifest-size:{new_manifest_metadata['size']}  manifest-digest:{new_manifest_metadata['digest']}"
         signature = gloci.oras.crypto.sign_data(data_to_sign, self.private_key_path)
-        new_manifest_metadata["annotations"].update({
-            annotation_signature_key: signature,
-            annotation_signed_string_key: data_to_sign,
-        })
+        new_manifest_metadata["annotations"].update(
+            {
+                annotation_signature_key: signature,
+                annotation_signed_string_key: data_to_sign,
+            }
+        )
 
     def sign_layer(
         self, layer, cname, version, architecture, checksum_sha256, media_type
     ):
         data_to_sign = f"version:{version}  cname:{cname} architecture:{architecture}  media_type:{media_type}  digest:{checksum_sha256}"
         signature = gloci.oras.crypto.sign_data(data_to_sign, self.private_key_path)
-        layer["annotations"].update({
-            annotation_signature_key: signature,
-            annotation_signed_string_key: data_to_sign,
-        })
+        layer["annotations"].update(
+            {
+                annotation_signature_key: signature,
+                annotation_signed_string_key: data_to_sign,
+            }
+        )
 
     @ensure_container
     def remove_container(self, container):
