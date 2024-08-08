@@ -28,7 +28,9 @@ import yaml
 import uuid
 from enum import Enum, auto
 
+import gloci
 from gloci.oras.crypto import calculate_sha256
+from gloci.oras.defaults import annotation_signature_key, annotation_signed_string_key
 from gloci.oras.schemas import (
     index as indexSchema,
     EmptyManifestMetadata,
@@ -121,11 +123,20 @@ def create_config_from_dict(conf: dict, annotations: dict):
 
 class GlociRegistry(Registry):
     def __init__(
-        self, registry_url, username=None, token=None, insecure=False, config_path=None
+        self,
+        registry_url,
+        username=None,
+        token=None,
+        insecure=False,
+        config_path=None,
+        private_key=None,
+        public_key=None,
     ):
         super().__init__(auth_backend="token", insecure=insecure)
         self.registry_url = registry_url
         self.config_path = config_path
+        self.private_key_path = private_key
+        self.public_key_path = public_key
         if not token:
             logger.error("No Token provided")
         else:
@@ -312,8 +323,8 @@ class GlociRegistry(Registry):
         if not os.path.exists(file_path):
             logger.exit(f"{file_path} does not exist.")
 
+        checksum_sha256 = calculate_sha256(file_path)
         container = oras.container.Container(container_name)
-
         manifest_container = oras.container.Container(
             f"{container_name}-{cname}-{architecture}"
         )
@@ -325,8 +336,12 @@ class GlociRegistry(Registry):
 
         layer = oras.oci.NewLayer(file_path, media_type, is_dir=False)
         layer["annotations"] = {
-            oras.defaults.annotation_title: os.path.basename(file_path)
+            oras.defaults.annotation_title: os.path.basename(file_path),
         }
+
+        self.sign_layer(
+            layer, cname, version, architecture, checksum_sha256, media_type
+        )
 
         self._check_200_response(self.upload_blob(file_path, container, layer))
 
@@ -351,6 +366,16 @@ class GlociRegistry(Registry):
         self._check_200_response(self.upload_index(new_index, container))
 
         print(f"Successfully attached {file_path} to {manifest_container}")
+
+    def sign_layer(
+        self, layer, cname, version, architecture, checksum_sha256, media_type
+    ):
+        data_to_sign = f"version:{version}  cname:{cname} architecture:{architecture}  media_type:{media_type}  digest:{checksum_sha256}"
+        signature = gloci.oras.crypto.sign_data(data_to_sign, self.private_key_path)
+        layer["annotations"] = {
+            annotation_signature_key: signature,
+            annotation_signed_string_key: data_to_sign,
+        }
 
     @ensure_container
     def remove_container(self, container):
@@ -459,6 +484,9 @@ class GlociRegistry(Registry):
                 oras.defaults.annotation_title: file_name,
                 "application/vnd.gardenlinux.image.checksum.sha256": checksum_sha256,
             }
+            self.sign_layer(
+                layer, cname, version, architecture, checksum_sha256, media_type
+            )
             if annotations:
                 layer["annotations"].update(annotations)
 

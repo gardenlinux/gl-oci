@@ -14,7 +14,7 @@ def image():
     pass
 
 
-def setup_registry(container, container_name):
+def setup_registry(container, container_name, private_key=None, public_key=None):
     container = oras.container.Container(container_name)
     username = os.getenv("GLOCI_REGISTRY_USERNAME")
     token = os.getenv("GLOCI_REGISTRY_TOKEN")
@@ -28,6 +28,8 @@ def setup_registry(container, container_name):
         container.registry,
         username,
         token,
+        private_key=private_key,
+        public_key=public_key,
     )
 
 
@@ -55,10 +57,28 @@ def setup_registry(container, container_name):
     type=click.Path(),
     help="info.yaml file of the Garden Linux flavor. The info.yaml specifies the data (layers)",
 )
-def push(container_name, architecture, cname, version, info_yaml):
+@click.option(
+    "--private_key",
+    required=False,
+    type=click.Path(),
+    help="Path to private key to use for signing",
+    default="cert/oci-sign.key",
+    show_default=True,
+)
+@click.option(
+    "--public_key",
+    required=False,
+    type=click.Path(),
+    help="Path to public key to use for verification of signatures",
+    default="cert/oci-sign.key",
+    show_default=True,
+)
+def push(
+    container_name, architecture, cname, version, info_yaml, private_key, public_key
+):
     container_name = f"{container_name}:{version}"
     container = oras.container.Container(container_name)
-    registry = setup_registry(container, container_name)
+    registry = setup_registry(container, container_name, private_key, public_key)
     registry.push_image_manifest(
         container_name, architecture, cname, version, info_yaml
     )
@@ -87,11 +107,36 @@ def push(container_name, architecture, cname, version, info_yaml):
 @click.option(
     "--media_type", required=True, type=click.Path(), help="mediatype of file"
 )
-def attach(container_name, cname, version, architecture, file_path, media_type):
+@click.option(
+    "--private_key",
+    required=False,
+    type=click.Path(),
+    help="Path to private key to use for signing",
+    default="cert/oci-sign.key",
+    show_default=True,
+)
+@click.option(
+    "--public_key",
+    required=False,
+    type=click.Path(),
+    help="Path to public key to use for verification of signatures",
+    default="cert/oci-sign.key",
+    show_default=True,
+)
+def attach(
+    container_name,
+    cname,
+    version,
+    architecture,
+    file_path,
+    media_type,
+    private_key,
+    public_key,
+):
     """Attach data to an existing image manifest"""
     container_name = f"{container_name}:{version}"
     container = oras.container.Container(container_name)
-    registry = setup_registry(container, container_name)
+    registry = setup_registry(container, container_name, private_key, public_key)
 
     registry.attach_layer(
         container_name, cname, version, architecture, file_path, media_type
