@@ -1,4 +1,47 @@
 import hashlib
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.serialization import load_pem_private_key
+from cryptography.hazmat.backends import default_backend
+from cryptography.exceptions import InvalidSignature
+from cryptography import x509
+
+
+def sign_data(data_str: str, private_key_file_path: str):
+
+    with open(private_key_file_path, "rb") as key_file:
+        private_key = load_pem_private_key(
+            key_file.read(), password=None, backend=default_backend()
+        )
+
+    signature = private_key.sign(
+        data_str.encode("utf-8"),
+        padding.PSS(
+            mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH
+        ),
+        hashes.SHA256(),
+    )
+
+    return signature.hex()
+
+
+def verify_signature(data_str: str, signature: str, public_key_file_path: str):
+    with open(public_key_file_path, "rb") as cert_file:
+        cert = x509.load_pem_x509_certificate(cert_file.read(), default_backend())
+        public_key = cert.public_key()
+
+    try:
+        public_key.verify(
+            signature,
+            data_str.encode("utf-8"),
+            padding.PSS(
+                mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH
+            ),
+            hashes.SHA256(),
+        )
+        return True
+    except InvalidSignature:
+        return False
 
 
 def calculate_sha256(file_path):

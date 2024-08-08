@@ -244,7 +244,9 @@ class GlociRegistry(Registry):
         return manifest
 
     @ensure_container
-    def get_manifest_by_cname(self, container, cname, version, arch, allowed_media_type=None):
+    def get_manifest_by_cname(
+        self, container, cname, version, arch, allowed_media_type=None
+    ):
         """
         Returns the manifest for a cname+arch combination of a container
         Will return None if no result was found
@@ -254,7 +256,9 @@ class GlociRegistry(Registry):
                 "application/vnd.oci.image.manifest.v1+json"
             )
             allowed_media_type = [default_image_manifest_media_type]
-        manifest_meta = self.get_manifest_meta_data_by_cname(container, cname, version, arch)
+        manifest_meta = self.get_manifest_meta_data_by_cname(
+            container, cname, version, arch
+        )
         if manifest_meta is None:
             logger.error(f"No manifest found for {cname}-{arch}")
             return None
@@ -293,14 +297,18 @@ class GlociRegistry(Registry):
         manifest_container = oras.container.Container(
             f"{container_name}-{cname}-{architecture}"
         )
-        manifest = self.get_manifest_by_cname(manifest_container, cname, version, architecture)
+        manifest = self.get_manifest_by_cname(
+            manifest_container, cname, version, architecture
+        )
 
         if "annotations" not in manifest:
             logger.warning("No annotations found in manifest, init annotations now.")
             manifest["annotations"] = {}
         attach_state(manifest["annotations"], new_state)
 
-    def attach_layer(self, container_name, cname, version, architecture, file_path, media_type):
+    def attach_layer(
+        self, container_name, cname, version, architecture, file_path, media_type
+    ):
         if not os.path.exists(file_path):
             logger.exit(f"{file_path} does not exist.")
 
@@ -331,7 +339,7 @@ class GlociRegistry(Registry):
 
         logger.debug("getting manifest meta data..")
         new_manifest_metadata = self.get_manifest_meta_data_by_cname(
-            container, cname, version,  architecture
+            container, cname, version, architecture
         )
         new_manifest_metadata["digest"] = self.get_digest(manifest_container)
         new_manifest_metadata["size"] = self.get_manifest_size(manifest_container)
@@ -406,7 +414,9 @@ class GlociRegistry(Registry):
             logger.debug("Image Index does exist, using existing image index")
         return image_index
 
-    def push_image_manifest(self, container_name, architecture, cname, version, info_yaml):
+    def push_image_manifest(
+        self, container_name, architecture, cname, version, info_yaml
+    ):
         """
         creates and pushes an image manifest
         """
