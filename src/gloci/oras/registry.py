@@ -170,6 +170,7 @@ class GlociRegistry(Registry):
         get_manifest = f"{self.prefix}://{container.manifest_url()}"
         response = self.do_request(get_manifest, "GET", headers=headers)
         self._check_200_response(response)
+        self.verify_manifest_signature(response.json())
         return response
 
     @ensure_container
@@ -265,7 +266,6 @@ class GlociRegistry(Registry):
         response = self.do_request(manifest_url, "GET", headers=headers, stream=False)
         self._check_200_response(response)
         manifest = response.json()
-        print(response)
         verify_sha256(digest, response.content)
         self.verify_manifest_signature(manifest)
         jsonschema.validate(manifest, schema=oras.schemas.manifest)
@@ -340,7 +340,6 @@ class GlociRegistry(Registry):
         if not os.path.exists(file_path):
             logger.exit(f"{file_path} does not exist.")
 
-        checksum_sha256 = calculate_sha256(file_path)
         container = oras.container.Container(container_name)
         manifest_container = oras.container.Container(
             f"{container_name}-{cname}-{architecture}"
@@ -355,12 +354,9 @@ class GlociRegistry(Registry):
 
         manifest["layers"].append(layer)
 
-        logger.debug("getting digest..")
         old_manifest_digest = self.get_digest(manifest_container)
-        logger.debug("uploading manifest")
         self._check_200_response(self.upload_manifest(manifest, manifest_container))
 
-        logger.debug("getting manifest meta data..")
         new_manifest_metadata = self.get_manifest_meta_data_by_cname(
             container, cname, version, architecture
         )
@@ -441,7 +437,6 @@ class GlociRegistry(Registry):
                 raise ValueError(f"layer is not signed. layer: {layer}")
             if annotation_signed_string_key not in layer["annotations"]:
                 raise ValueError(f"layer is not signed. layer: {layer}")
-            print(layer)
             media_type = layer["mediaType"]
             checksum_sha256 = layer["annotations"]["application/vnd.gardenlinux.image.checksum.sha256"]
             signature = layer["annotations"][annotation_signature_key]
@@ -489,7 +484,6 @@ class GlociRegistry(Registry):
         tag = container.digest or container.tag
 
         index_url = f"{container.registry}/v2/{container.api_prefix}/manifests/{tag}"
-        print(index)
         response = self.do_request(
             f"{self.prefix}://{index_url}",  # noqa
             "PUT",
@@ -537,13 +531,8 @@ class GlociRegistry(Registry):
         total_size = 0
 
         for artifact in info_data["oci_artifacts"]:
-            file_name = artifact["file_name"]
-            media_type = artifact["media_type"]
-            annotations = artifact["annotations"]
-
+            annotations_input = artifact["annotations"]
             file_path = os.path.join(base_path, artifact["file_name"])
-
-            checksum_sha256 = calculate_sha256(file_path)
 
             if not os.path.exists(file_path):
                 logger.error(f"{file_path} does not exist.")
@@ -557,14 +546,11 @@ class GlociRegistry(Registry):
             layer = self.create_layer(file_path, cname, version, architecture)
             total_size += int(layer["size"])
 
-            if annotations:
-                layer["annotations"].update(annotations)
-
+            if annotations_input:
+                layer["annotations"].update(annotations_input)
             manifest_image["layers"].append(layer)
 
-            logger.debug("Uploading blob..")
             response = self.upload_blob(file_path, container, layer)
-            logger.debug("Checking response after uploading blob..")
             self._check_200_response(response)
             if cleanup_blob and os.path.exists(file_path):
                 os.remove(file_path)
