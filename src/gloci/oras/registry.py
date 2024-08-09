@@ -14,7 +14,6 @@ from oras.provider import Registry
 from typing import Callable, Generator, List, Optional, Tuple, Union
 from http.cookiejar import DefaultCookiePolicy
 
-
 import logging
 import jsonschema
 import json
@@ -28,7 +27,9 @@ import yaml
 import uuid
 from enum import Enum, auto
 
-from gloci.oras.crypto import calculate_sha256
+import gloci
+from gloci.oras.crypto import calculate_sha256, verify_sha256, verify_signature
+from gloci.oras.defaults import annotation_signature_key, annotation_signed_string_key
 from gloci.oras.schemas import (
     index as indexSchema,
     EmptyManifestMetadata,
@@ -119,13 +120,36 @@ def create_config_from_dict(conf: dict, annotations: dict):
     return conf, config_path
 
 
+def construct_manifest_entry_signed_data_string(
+    cname, version, new_manifest_metadata, architecture
+):
+    data_to_sign = f"versio:{version}  cname{cname}  architecture:{architecture}  manifest-size:{new_manifest_metadata['size']}  manifest-digest:{new_manifest_metadata['digest']}"
+    return data_to_sign
+
+
+def construct_layer_signed_data_string(
+    cname, version, architecture, media_type, checksum_sha256
+):
+    data_to_sign = f"version:{version}  cname:{cname} architecture:{architecture}  media_type:{media_type}  digest:{checksum_sha256}"
+    return data_to_sign
+
+
 class GlociRegistry(Registry):
     def __init__(
-        self, registry_url, username=None, token=None, insecure=False, config_path=None
+        self,
+        registry_url,
+        username=None,
+        token=None,
+        insecure=False,
+        config_path=None,
+        private_key=None,
+        public_key=None,
     ):
         super().__init__(auth_backend="token", insecure=insecure)
         self.registry_url = registry_url
         self.config_path = config_path
+        self.private_key_path = private_key
+        self.public_key_path = public_key
         if not token:
             logger.error("No Token provided")
         else:
@@ -146,6 +170,7 @@ class GlociRegistry(Registry):
         get_manifest = f"{self.prefix}://{container.manifest_url()}"
         response = self.do_request(get_manifest, "GET", headers=headers)
         self._check_200_response(response)
+        self.verify_manifest_signature(response.json())
         return response
 
     @ensure_container
@@ -188,7 +213,7 @@ class GlociRegistry(Registry):
 
     @ensure_container
     def get_manifest_meta_data_by_cname(
-        self, container, cname, arch, allowed_media_type=None
+        self, container, cname, version, arch, allowed_media_type=None
     ):
         """
         Returns the manifest for a cname+arch combination of a container
@@ -213,10 +238,15 @@ class GlociRegistry(Registry):
                 logger.debug("architecture annotation was none, which is invalid")
                 return None
 
+            if "platform" not in manifest_meta:
+                logger.debug("platform data was none, which is invalid")
+                return None
             if (
                 manifest_meta["annotations"]["cname"] == cname
                 and manifest_meta["annotations"]["architecture"] == arch
+                and manifest_meta["platform"]["os.version"] == version
             ):
+                self.verify_manifest_meta_signature(manifest_meta)
                 return manifest_meta
 
         return None
@@ -236,11 +266,15 @@ class GlociRegistry(Registry):
         response = self.do_request(manifest_url, "GET", headers=headers, stream=False)
         self._check_200_response(response)
         manifest = response.json()
+        verify_sha256(digest, response.content)
+        self.verify_manifest_signature(manifest)
         jsonschema.validate(manifest, schema=oras.schemas.manifest)
         return manifest
 
     @ensure_container
-    def get_manifest_by_cname(self, container, cname, arch, allowed_media_type=None):
+    def get_manifest_by_cname(
+        self, container, cname, version, arch, allowed_media_type=None
+    ):
         """
         Returns the manifest for a cname+arch combination of a container
         Will return None if no result was found
@@ -250,7 +284,9 @@ class GlociRegistry(Registry):
                 "application/vnd.oci.image.manifest.v1+json"
             )
             allowed_media_type = [default_image_manifest_media_type]
-        manifest_meta = self.get_manifest_meta_data_by_cname(container, cname, arch)
+        manifest_meta = self.get_manifest_meta_data_by_cname(
+            container, cname, version, arch
+        )
         if manifest_meta is None:
             logger.error(f"No manifest found for {cname}-{arch}")
             return None
@@ -285,54 +321,50 @@ class GlociRegistry(Registry):
 
         return index
 
-    def change_state(self, container_name, cname, architecture, new_state):
+    def change_state(self, container_name, cname, version, architecture, new_state):
         manifest_container = oras.container.Container(
             f"{container_name}-{cname}-{architecture}"
         )
-        manifest = self.get_manifest_by_cname(manifest_container, cname, architecture)
+        manifest = self.get_manifest_by_cname(
+            manifest_container, cname, version, architecture
+        )
 
         if "annotations" not in manifest:
             logger.warning("No annotations found in manifest, init annotations now.")
             manifest["annotations"] = {}
         attach_state(manifest["annotations"], new_state)
 
-    def attach_layer(self, container_name, cname, architecture, file_path, media_type):
+    def attach_layer(
+        self, container_name, cname, version, architecture, file_path, media_type
+    ):
         if not os.path.exists(file_path):
             logger.exit(f"{file_path} does not exist.")
 
         container = oras.container.Container(container_name)
-
         manifest_container = oras.container.Container(
             f"{container_name}-{cname}-{architecture}"
         )
 
-        manifest = self.get_manifest_by_cname(container, cname, architecture)
-        cur_state = get_image_state(manifest)
-        if cur_state == "SIGNED":
-            logger.exit("Manifest is already signed. Manifest is read-only now")
+        manifest = self.get_manifest_by_cname(container, cname, version, architecture)
 
-        layer = oras.oci.NewLayer(file_path, media_type, is_dir=False)
-        layer["annotations"] = {
-            oras.defaults.annotation_title: os.path.basename(file_path)
-        }
+        self.verify_manifest_signature(manifest)
 
+        layer = self.create_layer(file_path, cname, version, architecture)
         self._check_200_response(self.upload_blob(file_path, container, layer))
 
         manifest["layers"].append(layer)
 
-        logger.debug("getting digest..")
         old_manifest_digest = self.get_digest(manifest_container)
-        logger.debug("uploading manifest")
         self._check_200_response(self.upload_manifest(manifest, manifest_container))
 
-        logger.debug("getting manifest meta data..")
-        version = "experimental"
         new_manifest_metadata = self.get_manifest_meta_data_by_cname(
-            container, cname, architecture
+            container, cname, version, architecture
         )
         new_manifest_metadata["digest"] = self.get_digest(manifest_container)
         new_manifest_metadata["size"] = self.get_manifest_size(manifest_container)
         new_manifest_metadata["platform"] = NewPlatform(architecture, version)
+
+        self.sign_manifest_entry(new_manifest_metadata, version, architecture, cname)
 
         new_index = self.update_index(
             container, old_manifest_digest, new_manifest_metadata
@@ -340,6 +372,86 @@ class GlociRegistry(Registry):
         self._check_200_response(self.upload_index(new_index, container))
 
         print(f"Successfully attached {file_path} to {manifest_container}")
+
+    def sign_manifest_entry(self, new_manifest_metadata, version, architecture, cname):
+        data_to_sign = construct_manifest_entry_signed_data_string(
+            cname, version, new_manifest_metadata, architecture
+        )
+        signature = gloci.oras.crypto.sign_data(data_to_sign, self.private_key_path)
+        new_manifest_metadata["annotations"].update(
+            {
+                annotation_signature_key: signature,
+                annotation_signed_string_key: data_to_sign,
+            }
+        )
+
+    def sign_layer(
+        self, layer, cname, version, architecture, checksum_sha256, media_type
+    ):
+        data_to_sign = construct_layer_signed_data_string(
+            cname, version, architecture, media_type, checksum_sha256
+        )
+        signature = gloci.oras.crypto.sign_data(data_to_sign, self.private_key_path)
+        layer["annotations"].update(
+            {
+                annotation_signature_key: signature,
+                annotation_signed_string_key: data_to_sign,
+            }
+        )
+
+    def verify_manifest_meta_signature(self, manifest_meta):
+        if "annotations" not in manifest_meta:
+            raise ValueError("manifest does not contain annotations")
+        if annotation_signature_key not in manifest_meta["annotations"]:
+            raise ValueError("manifest is not signed")
+        if annotation_signed_string_key not in manifest_meta["annotations"]:
+            raise ValueError("manifest is not signed")
+        signature = manifest_meta["annotations"][annotation_signature_key]
+        signed_data = manifest_meta["annotations"][annotation_signed_string_key]
+        cname = manifest_meta["annotations"]["cname"]
+        version = manifest_meta["platform"]["os.version"]
+        architecture = manifest_meta["annotations"]["architecture"]
+        signed_data_expected = construct_manifest_entry_signed_data_string(
+            cname, version, manifest_meta, architecture
+        )
+        if signed_data_expected != signed_data:
+            raise ValueError(
+                f"Signed data does not match expected signed data.\n{signed_data} != {signed_data_expected}"
+            )
+        logger.debug(f"verifying signature with public key {self.public_key_path}")
+        verify_signature(signed_data, signature, self.public_key_path)
+
+    def verify_manifest_signature(self, manifest):
+        if "layers" not in manifest:
+            raise ValueError("manifest does not contain layers")
+        if "annotations" not in manifest:
+            raise ValueError("manifest does not contain annotations")
+
+        cname = manifest["annotations"]["cname"]
+        version = manifest["annotations"]["version"]
+        architecture = manifest["annotations"]["architecture"]
+        for layer in manifest["layers"]:
+            if "annotations" not in layer:
+                raise ValueError(f"layer does not contain annotations. layer: {layer}")
+            if annotation_signature_key not in layer["annotations"]:
+                raise ValueError(f"layer is not signed. layer: {layer}")
+            if annotation_signed_string_key not in layer["annotations"]:
+                raise ValueError(f"layer is not signed. layer: {layer}")
+            media_type = layer["mediaType"]
+            checksum_sha256 = layer["annotations"][
+                "application/vnd.gardenlinux.image.checksum.sha256"
+            ]
+            signature = layer["annotations"][annotation_signature_key]
+            signed_data = layer["annotations"][annotation_signed_string_key]
+            signed_data_expected = construct_layer_signed_data_string(
+                cname, version, architecture, media_type, checksum_sha256
+            )
+            if signed_data_expected != signed_data:
+                raise ValueError(
+                    f"Signed data does not match expected signed data. {signed_data} != {signed_data_expected}"
+                )
+
+            verify_signature(signed_data, signature, self.public_key_path)
 
     @ensure_container
     def remove_container(self, container):
@@ -376,7 +488,6 @@ class GlociRegistry(Registry):
         tag = container.digest or container.tag
 
         index_url = f"{container.registry}/v2/{container.api_prefix}/manifests/{tag}"
-        print(index)
         response = self.do_request(
             f"{self.prefix}://{index_url}",  # noqa
             "PUT",
@@ -403,7 +514,9 @@ class GlociRegistry(Registry):
             logger.debug("Image Index does exist, using existing image index")
         return image_index
 
-    def push_image_manifest(self, container_name, architecture, cname, info_yaml):
+    def push_image_manifest(
+        self, container_name, architecture, cname, version, info_yaml
+    ):
         """
         creates and pushes an image manifest
         """
@@ -422,13 +535,8 @@ class GlociRegistry(Registry):
         total_size = 0
 
         for artifact in info_data["oci_artifacts"]:
-            file_name = artifact["file_name"]
-            media_type = artifact["media_type"]
-            annotations = artifact["annotations"]
-
+            annotations_input = artifact["annotations"]
             file_path = os.path.join(base_path, artifact["file_name"])
-
-            checksum_sha256 = calculate_sha256(file_path)
 
             if not os.path.exists(file_path):
                 logger.error(f"{file_path} does not exist.")
@@ -439,31 +547,24 @@ class GlociRegistry(Registry):
                 file_path = oras.utils.make_targz(file_path)
                 cleanup_blob = True
 
-            layer = oras.oci.NewLayer(file_path, media_type, is_dir=cleanup_blob)
+            layer = self.create_layer(file_path, cname, version, architecture)
             total_size += int(layer["size"])
 
-            layer["annotations"] = {
-                oras.defaults.annotation_title: file_name,
-                "application/vnd.gardenlinux.image.checksum.sha256": checksum_sha256,
-            }
-            if annotations:
-                layer["annotations"].update(annotations)
-
+            if annotations_input:
+                layer["annotations"].update(annotations_input)
             manifest_image["layers"].append(layer)
 
-            logger.debug("Uploading blob..")
             response = self.upload_blob(file_path, container, layer)
-            logger.debug("Checking response after uploading blob..")
             self._check_200_response(response)
             if cleanup_blob and os.path.exists(file_path):
                 os.remove(file_path)
-
-        layer = oras.oci.NewLayer(
-            info_yaml, "application/vnd.gardenlinux.metadata.info", is_dir=False
-        )
+        layer = self.create_layer(info_yaml, cname, version, architecture)
         total_size += int(layer["size"])
         manifest_image["layers"].append(layer)
         manifest_image["annotations"] = {}
+        manifest_image["annotations"]["version"] = version
+        manifest_image["annotations"]["cname"] = cname
+        manifest_image["annotations"]["architecture"] = architecture
         attach_state(manifest_image["annotations"], "UNTESTED")
 
         if container is None:
@@ -491,10 +592,8 @@ class GlociRegistry(Registry):
             self.upload_manifest(manifest_image, manifest_container)
         )
 
-        # attach Manifest to oci-index
         metadata_annotations = {"cname": cname, "architecture": architecture}
         attach_state(metadata_annotations, "UNTESTED")
-        version = "experimental"
         manifest_digest = self.get_digest(manifest_container)
         manifest_index_metadata = NewManifestMetadata(
             manifest_digest,
@@ -502,20 +601,38 @@ class GlociRegistry(Registry):
             metadata_annotations,
             NewPlatform(architecture, version),
         )
+        self.sign_manifest_entry(manifest_index_metadata, version, architecture, cname)
 
         old_manifest_meta_data = self.get_manifest_meta_data_by_cname(
-            container, cname, architecture
+            container, cname, version, architecture
         )
         if old_manifest_meta_data is not None:
             new_index = self.update_index(
                 container, old_manifest_meta_data["digest"], manifest_index_metadata
             )
-            print(new_index)
         else:
             new_index = self.update_index(container, None, manifest_index_metadata)
-            print(new_index)
 
         self._check_200_response(self.upload_index(new_index, container))
 
         print(f"Successfully pushed {container}")
         return response
+
+    def create_layer(self, file_path, cname, version, architecture):
+        checksum_sha256 = calculate_sha256(file_path)
+        layer = oras.oci.NewLayer(
+            file_path, "application/vnd.gardenlinux.metadata.info", is_dir=False
+        )
+        layer["annotations"] = {
+            oras.defaults.annotation_title: file_path,
+            "application/vnd.gardenlinux.image.checksum.sha256": checksum_sha256,
+        }
+        self.sign_layer(
+            layer,
+            cname,
+            version,
+            architecture,
+            checksum_sha256,
+            "application/vnd.gardenlinux.metadata.info",
+        )
+        return layer
