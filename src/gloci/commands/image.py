@@ -70,7 +70,7 @@ def setup_registry(container, container_name, private_key=None, public_key=None)
     required=False,
     type=click.Path(),
     help="Path to public key to use for verification of signatures",
-    default="cert/oci-sign.key",
+    default="cert/oci-sign.crt",
     show_default=True,
 )
 def push(
@@ -120,7 +120,7 @@ def push(
     required=False,
     type=click.Path(),
     help="Path to public key to use for verification of signatures",
-    default="cert/oci-sign.key",
+    default="cert/oci-sign.crt",
     show_default=True,
 )
 def attach(
@@ -170,11 +170,19 @@ def status(container_name, version):
 @click.option("--cname", required=True, help="cname of image")
 @click.option("--version", required=True, type=click.Path(), help="Version of Image")
 @click.option("--architecture", required=True, help="architecture of image")
-def inspect(container_name, cname, version, architecture):
+@click.option(
+    "--public_key",
+    required=False,
+    type=click.Path(),
+    help="Path to public key to use for verification of signatures",
+    default="cert/oci-sign.crt",
+    show_default=True,
+)
+def inspect(container_name, cname, version, architecture, public_key):
     """inspect container"""
     container_name = f"{container_name}:{version}"
     container = oras.container.Container(container_name)
-    registry = setup_registry(container, container_name)
+    registry = setup_registry(container, container_name, public_key=public_key)
     print(
         json.dumps(
             registry.get_manifest_by_cname(container, cname, version, architecture),
@@ -188,11 +196,19 @@ def inspect(container_name, cname, version, architecture):
     "--container", "container_name", required=True, help="oci image reference"
 )
 @click.option("--version", required=True, type=click.Path(), help="Version of Image")
-def inspect_index(container_name, version):
+@click.option(
+    "--public_key",
+    required=False,
+    type=click.Path(),
+    help="Path to public key to use for verification of signatures",
+    default="cert/oci-sign.crt",
+    show_default=True,
+)
+def inspect_index(container_name, version, public_key):
     """inspects complete index"""
     container_name = f"{container_name}:{version}"
     container = oras.container.Container(container_name)
-    registry = setup_registry(container, container_name)
+    registry = setup_registry(container, container_name, public_key=public_key)
     print(json.dumps(registry.get_index(container), indent=4))
 
 

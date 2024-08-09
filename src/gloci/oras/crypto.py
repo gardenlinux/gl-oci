@@ -26,13 +26,15 @@ def sign_data(data_str: str, private_key_file_path: str):
 
 
 def verify_signature(data_str: str, signature: str, public_key_file_path: str):
+    if public_key_file_path is None:
+        return False
     with open(public_key_file_path, "rb") as cert_file:
         cert = x509.load_pem_x509_certificate(cert_file.read(), default_backend())
         public_key = cert.public_key()
 
     try:
         public_key.verify(
-            signature,
+            signature.encode("utf-8"),
             data_str.encode("utf-8"),
             padding.PSS(
                 mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH
