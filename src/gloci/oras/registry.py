@@ -29,7 +29,7 @@ import uuid
 from enum import Enum, auto
 
 import gloci
-from gloci.oras.crypto import calculate_sha256
+from gloci.oras.crypto import calculate_sha256, verify_sha256
 from gloci.oras.defaults import annotation_signature_key, annotation_signed_string_key
 from gloci.oras.schemas import (
     index as indexSchema,
@@ -251,6 +251,8 @@ class GlociRegistry(Registry):
         response = self.do_request(manifest_url, "GET", headers=headers, stream=False)
         self._check_200_response(response)
         manifest = response.json()
+        print(response)
+        verify_sha256(digest, response.content)
         jsonschema.validate(manifest, schema=oras.schemas.manifest)
         return manifest
 

@@ -44,6 +44,12 @@ def verify_signature(data_str: str, signature: str, public_key_file_path: str):
         return False
 
 
+def verify_sha256(checksum: str, data):
+    data_checksum = f"sha256:{hashlib.sha256(data).hexdigest()}"
+    if checksum != data_checksum:
+        raise ValueError(f"Invalid checksum. {checksum} != {data_checksum}")
+
+
 def calculate_sha256(file_path):
     """Calculate the SHA256 checksum of a file."""
     sha256_hash = hashlib.sha256()
