@@ -121,14 +121,14 @@ def create_config_from_dict(conf: dict, annotations: dict):
 
 
 def construct_manifest_entry_signed_data_string(
-        cname, version, new_manifest_metadata, architecture
+    cname, version, new_manifest_metadata, architecture
 ):
     data_to_sign = f"versio:{version}  cname{cname}  architecture:{architecture}  manifest-size:{new_manifest_metadata['size']}  manifest-digest:{new_manifest_metadata['digest']}"
     return data_to_sign
 
 
 def construct_layer_signed_data_string(
-        cname, version, architecture, media_type, checksum_sha256
+    cname, version, architecture, media_type, checksum_sha256
 ):
     data_to_sign = f"version:{version}  cname:{cname} architecture:{architecture}  media_type:{media_type}  digest:{checksum_sha256}"
     return data_to_sign
@@ -136,14 +136,14 @@ def construct_layer_signed_data_string(
 
 class GlociRegistry(Registry):
     def __init__(
-            self,
-            registry_url,
-            username=None,
-            token=None,
-            insecure=False,
-            config_path=None,
-            private_key=None,
-            public_key=None,
+        self,
+        registry_url,
+        username=None,
+        token=None,
+        insecure=False,
+        config_path=None,
+        private_key=None,
+        public_key=None,
     ):
         super().__init__(auth_backend="token", insecure=insecure)
         self.registry_url = registry_url
@@ -213,7 +213,7 @@ class GlociRegistry(Registry):
 
     @ensure_container
     def get_manifest_meta_data_by_cname(
-            self, container, cname, version, arch, allowed_media_type=None
+        self, container, cname, version, arch, allowed_media_type=None
     ):
         """
         Returns the manifest for a cname+arch combination of a container
@@ -242,9 +242,9 @@ class GlociRegistry(Registry):
                 logger.debug("platform data was none, which is invalid")
                 return None
             if (
-                    manifest_meta["annotations"]["cname"] == cname
-                    and manifest_meta["annotations"]["architecture"] == arch
-                    and manifest_meta["platform"]["os.version"] == version
+                manifest_meta["annotations"]["cname"] == cname
+                and manifest_meta["annotations"]["architecture"] == arch
+                and manifest_meta["platform"]["os.version"] == version
             ):
                 self.verify_manifest_meta_signature(manifest_meta)
                 return manifest_meta
@@ -273,7 +273,7 @@ class GlociRegistry(Registry):
 
     @ensure_container
     def get_manifest_by_cname(
-            self, container, cname, version, arch, allowed_media_type=None
+        self, container, cname, version, arch, allowed_media_type=None
     ):
         """
         Returns the manifest for a cname+arch combination of a container
@@ -335,7 +335,7 @@ class GlociRegistry(Registry):
         attach_state(manifest["annotations"], new_state)
 
     def attach_layer(
-            self, container_name, cname, version, architecture, file_path, media_type
+        self, container_name, cname, version, architecture, file_path, media_type
     ):
         if not os.path.exists(file_path):
             logger.exit(f"{file_path} does not exist.")
@@ -386,7 +386,7 @@ class GlociRegistry(Registry):
         )
 
     def sign_layer(
-            self, layer, cname, version, architecture, checksum_sha256, media_type
+        self, layer, cname, version, architecture, checksum_sha256, media_type
     ):
         data_to_sign = construct_layer_signed_data_string(
             cname, version, architecture, media_type, checksum_sha256
@@ -438,14 +438,18 @@ class GlociRegistry(Registry):
             if annotation_signed_string_key not in layer["annotations"]:
                 raise ValueError(f"layer is not signed. layer: {layer}")
             media_type = layer["mediaType"]
-            checksum_sha256 = layer["annotations"]["application/vnd.gardenlinux.image.checksum.sha256"]
+            checksum_sha256 = layer["annotations"][
+                "application/vnd.gardenlinux.image.checksum.sha256"
+            ]
             signature = layer["annotations"][annotation_signature_key]
             signed_data = layer["annotations"][annotation_signed_string_key]
-            signed_data_expected = construct_layer_signed_data_string(cname, version, architecture, media_type,
-                                                                      checksum_sha256)
+            signed_data_expected = construct_layer_signed_data_string(
+                cname, version, architecture, media_type, checksum_sha256
+            )
             if signed_data_expected != signed_data:
                 raise ValueError(
-                    f"Signed data does not match expected signed data. {signed_data} != {signed_data_expected}")
+                    f"Signed data does not match expected signed data. {signed_data} != {signed_data_expected}"
+                )
 
             verify_signature(signed_data, signature, self.public_key_path)
 
@@ -474,7 +478,7 @@ class GlociRegistry(Registry):
             print(f"{manifest_digest}:\t{image_state}")
 
     def upload_index(
-            self, index: dict, container: oras.container.Container
+        self, index: dict, container: oras.container.Container
     ) -> requests.Response:
         jsonschema.validate(index, schema=indexSchema)
         headers = {
@@ -511,7 +515,7 @@ class GlociRegistry(Registry):
         return image_index
 
     def push_image_manifest(
-            self, container_name, architecture, cname, version, info_yaml
+        self, container_name, architecture, cname, version, info_yaml
     ):
         """
         creates and pushes an image manifest
@@ -624,6 +628,11 @@ class GlociRegistry(Registry):
             "application/vnd.gardenlinux.image.checksum.sha256": checksum_sha256,
         }
         self.sign_layer(
-            layer, cname, version, architecture, checksum_sha256, "application/vnd.gardenlinux.metadata.info"
+            layer,
+            cname,
+            version,
+            architecture,
+            checksum_sha256,
+            "application/vnd.gardenlinux.metadata.info",
         )
         return layer
