@@ -1,6 +1,8 @@
 # for reference:
 #   https://json-schema.org/understanding-json-schema/reference/object
 
+# TODO: add more schemas, and validate dicts with schemas before accessing them.
+
 schema_url = "http://json-schema.org/draft-07/schema"
 
 platformProperties = {

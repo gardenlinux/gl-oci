@@ -4,9 +4,10 @@ import os
 import click
 import oras.client
 import oras.container
+from oras.container import Container as OrasContainer
 from gloci.oras.registry import GlociRegistry
-import pprint
 
+from typing import Optional
 
 @click.group()
 def image():
@@ -14,8 +15,7 @@ def image():
     pass
 
 
-def setup_registry(container, container_name, private_key=None, public_key=None):
-    container = oras.container.Container(container_name)
+def setup_registry(container_name: str, private_key: Optional[str] = None, public_key: Optional[str] = None):
     username = os.getenv("GLOCI_REGISTRY_USERNAME")
     token = os.getenv("GLOCI_REGISTRY_TOKEN")
     if username is None:
@@ -25,8 +25,7 @@ def setup_registry(container, container_name, private_key=None, public_key=None)
         click.echo("No token")
         exit(-1)
     return GlociRegistry(
-        container.registry,
-        username,
+        container_name,
         token,
         private_key=private_key,
         public_key=public_key,
@@ -47,9 +46,7 @@ def setup_registry(container, container_name, private_key=None, public_key=None)
     type=click.Path(),
     help="Target Image CPU Architecture",
 )
-@click.option(
-    "--cname", required=True, type=click.Path(), help="Canonical Name of Image"
-)
+@click.option("--cname", required=True, type=click.Path(), help="Canonical Name of Image")
 @click.option("--version", required=True, type=click.Path(), help="Version of Image")
 @click.option(
     "--info_yaml",
@@ -73,15 +70,10 @@ def setup_registry(container, container_name, private_key=None, public_key=None)
     default="cert/oci-sign.crt",
     show_default=True,
 )
-def push(
-    container_name, architecture, cname, version, info_yaml, private_key, public_key
-):
+def push(container_name, architecture, cname, version, info_yaml, private_key, public_key):
     container_name = f"{container_name}:{version}"
-    container = oras.container.Container(container_name)
-    registry = setup_registry(container, container_name, private_key, public_key)
-    registry.push_image_manifest(
-        container_name, architecture, cname, version, info_yaml
-    )
+    registry = setup_registry(container_name, private_key=private_key, public_key=public_key)
+    registry.push_image_manifest(architecture, cname, version, info_yaml)
     click.echo(f"Pushed {container_name}")
 
 
@@ -95,18 +87,14 @@ def push(
 )
 @click.option("--cname", required=True, type=click.Path(), help="cname of target image")
 @click.option("--version", required=True, type=click.Path(), help="Version of Image")
-@click.option(
-    "--architecture", required=True, type=click.Path(), help="architecture of image"
-)
+@click.option("--architecture", required=True, type=click.Path(), help="architecture of image")
 @click.option(
     "--file_path",
     required=True,
     type=click.Path(),
     help="file to attach to the manifest",
 )
-@click.option(
-    "--media_type", required=True, type=click.Path(), help="mediatype of file"
-)
+@click.option("--media_type", required=True, type=click.Path(), help="mediatype of file")
 @click.option(
     "--private_key",
     required=False,
@@ -135,14 +123,11 @@ def attach(
 ):
     """Attach data to an existing image manifest"""
     container_name = f"{container_name}:{version}"
-    container = oras.container.Container(container_name)
-    registry = setup_registry(container, container_name, private_key, public_key)
+    registry = setup_registry(container_name, private_key, public_key)
 
-    registry.attach_layer(
-        container_name, cname, version, architecture, file_path, media_type
-    )
+    registry.attach_layer(cname, version, architecture, file_path, media_type)
 
-    click.echo(f"Attached {file_path} to {container}")
+    click.echo(f"Attached {file_path} to {container_name}")
 
 
 @image.command()
@@ -151,22 +136,17 @@ def remove():
 
 
 @image.command()
-@click.option(
-    "--container", "container_name", required=True, help="oci image reference"
-)
+@click.option("--container", "container_name", required=True, help="oci image reference")
 @click.option("--version", required=True, type=click.Path(), help="Version of Image")
 def status(container_name, version):
     """Get status of image"""
     container_name = f"{container_name}:{version}"
-    container = oras.container.Container(container_name)
-    registry = setup_registry(container, container_name)
-    registry.status_all(container)
+    registry = setup_registry(container_name)
+    registry.status_all(container_name)
 
 
 @image.command()
-@click.option(
-    "--container", "container_name", required=True, help="oci image reference"
-)
+@click.option("--container", "container_name", required=True, help="oci image reference")
 @click.option("--cname", required=True, help="cname of image")
 @click.option("--version", required=True, type=click.Path(), help="Version of Image")
 @click.option("--architecture", required=True, help="architecture of image")
@@ -182,7 +162,7 @@ def inspect(container_name, cname, version, architecture, public_key):
     """inspect container"""
     container_name = f"{container_name}:{version}"
     container = oras.container.Container(container_name)
-    registry = setup_registry(container, container_name, public_key=public_key)
+    registry = setup_registry(container_name, public_key=public_key)
     print(
         json.dumps(
             registry.get_manifest_by_cname(container, cname, version, architecture),
@@ -192,9 +172,7 @@ def inspect(container_name, cname, version, architecture, public_key):
 
 
 @image.command()
-@click.option(
-    "--container", "container_name", required=True, help="oci image reference"
-)
+@click.option("--container", "container_name", required=True, help="oci image reference")
 @click.option("--version", required=True, type=click.Path(), help="Version of Image")
 @click.option(
     "--public_key",
@@ -207,9 +185,8 @@ def inspect(container_name, cname, version, architecture, public_key):
 def inspect_index(container_name, version, public_key):
     """inspects complete index"""
     container_name = f"{container_name}:{version}"
-    container = oras.container.Container(container_name)
-    registry = setup_registry(container, container_name, public_key=public_key)
-    print(json.dumps(registry.get_index(container), indent=4))
+    registry = setup_registry(container_name, public_key=public_key)
+    print(json.dumps(registry.get_index(), indent=4))
 
 
 @image.command()
