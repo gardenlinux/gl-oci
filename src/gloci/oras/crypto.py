@@ -5,6 +5,7 @@ from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from cryptography.hazmat.backends import default_backend
 from cryptography.exceptions import InvalidSignature
 from cryptography import x509
+import base64
 
 
 def sign_data(data_str: str, private_key_file_path: str) -> str:
@@ -15,11 +16,13 @@ def sign_data(data_str: str, private_key_file_path: str) -> str:
 
     signature = private_key.sign(
         data_str.encode("utf-8"),
-        padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
+        padding.PSS(
+            mgf=padding.MGF1(hashes.SHA256()),  # Mask generation function based on SHA-256
+            salt_length=padding.PSS.MAX_LENGTH,  # Maximum salt length
+        ),
         hashes.SHA256(),
     )
-    print(signature.hex())
-    return signature.hex()
+    return base64.b64encode(signature).decode("utf-8")
 
 
 def verify_signature(data_str: str, signature: str, public_key_file_path: str):
@@ -28,13 +31,17 @@ def verify_signature(data_str: str, signature: str, public_key_file_path: str):
         public_key = cert.public_key()
     try:
         public_key.verify(
-            signature.encode("utf-8"),
+            base64.b64decode(signature),
             data_str.encode("utf-8"),
-            padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
+            padding.PSS(
+                mgf=padding.MGF1(hashes.SHA256()),  # Mask generation function based on SHA-256
+                salt_length=padding.PSS.MAX_LENGTH,  # Maximum salt length
+            ),
             hashes.SHA256(),
         )
     except InvalidSignature:
         raise ValueError(f"Invalid Signature {signature} for data: {data_str}")
+
 
 def verify_sha256(checksum: str, data: bytes):
     data_checksum = f"sha256:{hashlib.sha256(data).hexdigest()}"
