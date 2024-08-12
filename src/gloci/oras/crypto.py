@@ -18,7 +18,7 @@ def sign_data(data_str: str, private_key_file_path: str) -> str:
         padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
         hashes.SHA256(),
     )
-
+    print(signature.hex())
     return signature.hex()
 
 
@@ -34,8 +34,8 @@ def verify_signature(data_str: str, signature: str, public_key_file_path: str):
             hashes.SHA256(),
         )
     except InvalidSignature:
-        # raise ValueError(f"Invalid Signature for data: {data_str}")
-        print("Invalid Signature!")
+        raise ValueError(f"Invalid Signature {signature} for data: {data_str}")
+
 def verify_sha256(checksum: str, data: bytes):
     data_checksum = f"sha256:{hashlib.sha256(data).hexdigest()}"
     if checksum != data_checksum:
