@@ -152,7 +152,6 @@ class GlociRegistry(Registry):
         if not allowed_media_type:
             default_image_index_media_type = "application/vnd.oci.image.manifest.v1+json"
             allowed_media_type = [default_image_index_media_type]
-        logger.debug("get manifest")
         # self.load_configs(container)
         headers = {"Accept": ";".join(allowed_media_type)}
         headers.update(self.headers)
@@ -297,17 +296,13 @@ class GlociRegistry(Registry):
         """
         replaces an old manifest entry with a new manifest entry
         """
-        logger.debug("trying to get index..")
         index = self.get_index()
-        logger.debug("got index..")
 
         if "manifests" not in index:
             logger.debug("Index is empty")
         updated = False
         if old_digest is not None:
-            logger.debug(f"looking for old digest {old_digest}")
             for i, manifest in enumerate(index["manifests"]):
-                logger.debug(f"old_digest: {old_digest} =? {manifest['digest']}")
                 if manifest["digest"] == old_digest:
                     logger.debug("Found old manifest entry")
                     index["manifests"][i] = manifest_meta_data
@@ -504,7 +499,6 @@ class GlociRegistry(Registry):
             headers=headers,
             json=index,
         )
-        logger.debug(response.content)
         return response
 
     def push_image_manifest(self, architecture: str, cname: str, version: str, info_yaml: str):
@@ -595,9 +589,7 @@ class GlociRegistry(Registry):
         if old_manifest_meta_data is not None:
             new_index = self.update_index(old_manifest_meta_data["digest"], manifest_index_metadata)
         else:
-            logger.debug("aaaaaaaa")
             new_index = self.update_index(None, manifest_index_metadata)
-            logger.debug("bbbbbbb")
 
 
         self._check_200_response(self.upload_index(new_index))
