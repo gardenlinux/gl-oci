@@ -7,7 +7,7 @@ import os
 import sys
 import uuid
 from enum import Enum, auto
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 
 import jsonschema
 import oras.auth
@@ -30,14 +30,8 @@ from gloci.oras.crypto import (
     verify_signature,
 )
 from gloci.oras.defaults import annotation_signature_key, annotation_signed_string_key
-from gloci.oras.schemas import (
-    EmptyIndex,
-    EmptyManifestMetadata,
-    EmptyPlatform,
-)
-from gloci.oras.schemas import (
-    index as indexSchema,
-)
+from gloci.oras.schemas import EmptyIndex, EmptyManifestMetadata, EmptyPlatform
+from gloci.oras.schemas import index as indexSchema
 
 
 class ManifestState(Enum):
