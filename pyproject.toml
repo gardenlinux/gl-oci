@@ -16,6 +16,7 @@ PyYAML = "^6.0.1"
 click = "^8.1.7"
 oras = { git  = "https://github.com/oras-project/oras-py.git", rev="caf8db5b279382335fbb1f6d7402ed9b73618d37" }
 #oras = "^0.1.30"
+cryptography = "^43.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
