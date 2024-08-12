@@ -11,14 +11,18 @@ from typing import Optional
 
 
 @click.group()
-def image():
+@click.option('--insecure', default=True, is_flag=True, help='Allow insecure connections')
+@click.pass_context
+def image(ctx, insecure):
     """Manage images"""
-    pass
+    ctx.ensure_object(dict)
 
+    ctx.obj['insecure'] = insecure
 
 def setup_registry(
     container_name: str,
     private_key: Optional[str] = None,
+    insecure: bool = False,
     public_key: Optional[str] = None,
 ):
     username = os.getenv("GLOCI_REGISTRY_USERNAME")
@@ -32,6 +36,7 @@ def setup_registry(
     return GlociRegistry(
         container_name,
         token,
+        insecure=insecure,
         private_key=private_key,
         public_key=public_key,
     )
@@ -77,12 +82,13 @@ def setup_registry(
     default="cert/oci-sign.crt",
     show_default=True,
 )
-def push(
+@click.pass_context
+def push(ctx, 
     container_name, architecture, cname, version, info_yaml, private_key, public_key
 ):
     container_name = f"{container_name}:{version}"
     registry = setup_registry(
-        container_name, private_key=private_key, public_key=public_key
+        container_name, insecure=ctx.obj['insecure'], private_key=private_key, public_key=public_key
     )
     registry.push_image_manifest(architecture, cname, version, info_yaml)
     click.echo(f"Pushed {container_name}")
@@ -126,7 +132,9 @@ def push(
     default="cert/oci-sign.crt",
     show_default=True,
 )
+@click.pass_context
 def attach(
+    ctx,
     container_name,
     cname,
     version,
@@ -138,7 +146,7 @@ def attach(
 ):
     """Attach data to an existing image manifest"""
     container_name = f"{container_name}:{version}"
-    registry = setup_registry(container_name, private_key, public_key)
+    registry = setup_registry(container_name, insecure=ctx.obj['insecure'], private_key=private_key, public_key=public_key)
 
     registry.attach_layer(cname, version, architecture, file_path, media_type)
 
@@ -155,11 +163,12 @@ def remove():
     "--container", "container_name", required=True, help="oci image reference"
 )
 @click.option("--version", required=True, type=click.Path(), help="Version of Image")
-def status(container_name, version):
+@click.pass_context
+def status(ctx, container_name, version):
     """Get status of image"""
     container_name = f"{container_name}:{version}"
-    registry = setup_registry(container_name)
-    registry.status_all(container_name)
+    registry = setup_registry(container_name, insecure=ctx.obj['insecure'])
+    registry.status_all()
 
 
 @image.command()
@@ -177,11 +186,12 @@ def status(container_name, version):
     default="cert/oci-sign.crt",
     show_default=True,
 )
-def inspect(container_name, cname, version, architecture, public_key):
+@click.pass_context
+def inspect(ctx, container_name, cname, version, architecture, public_key):
     """inspect container"""
     container_name = f"{container_name}:{version}"
     container = oras.container.Container(container_name)
-    registry = setup_registry(container_name, public_key=public_key)
+    registry = setup_registry(container_name, insecure=ctx.obj['insecure'], public_key=public_key)
     print(
         json.dumps(
             registry.get_manifest_by_cname(container, cname, version, architecture),
@@ -203,14 +213,16 @@ def inspect(container_name, cname, version, architecture, public_key):
     default="cert/oci-sign.crt",
     show_default=True,
 )
-def inspect_index(container_name, version, public_key):
+@click.pass_context
+def inspect_index(ctx, container_name, version, public_key):
     """inspects complete index"""
     container_name = f"{container_name}:{version}"
-    registry = setup_registry(container_name, public_key=public_key)
+    registry = setup_registry(container_name, insecure=ctx.obj['insecure'], public_key=public_key)
     print(json.dumps(registry.get_index(), indent=4))
 
 
 @image.command()
-def list():
+@click.pass_context
+def list(ctx):
     """List available images with status"""
     click.echo("Requesting status of all available images")
