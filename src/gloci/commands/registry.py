@@ -14,7 +14,9 @@ def show():
     config = get_config()
     if "DEFAULT" in config:
         click.echo(f"Registry URL: {config['DEFAULT'].get('registry_url', 'Not set')}")
-        click.echo(f"Registry Port: {config['DEFAULT'].get('registry_port', 'Not set')}")
+        click.echo(
+            f"Registry Port: {config['DEFAULT'].get('registry_port', 'Not set')}"
+        )
         click.echo(f"Output Path: {config['DEFAULT'].get('output_path', 'Not set')}")
     else:
         click.echo("No configuration found")

@@ -2,9 +2,10 @@ from gloci.oras.crypto import sign_data, verify_signature
 import string
 import random
 
+
 def generate_random_string(length: int):
     characters = string.ascii_letters + string.digits + string.punctuation
-    return ''.join(random.choice(characters) for _ in range(length))
+    return "".join(random.choice(characters) for _ in range(length))
 
 
 def test_signing():

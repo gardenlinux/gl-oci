@@ -17,7 +17,9 @@ def sign_data(data_str: str, private_key_file_path: str) -> str:
     signature = private_key.sign(
         data_str.encode("utf-8"),
         padding.PSS(
-            mgf=padding.MGF1(hashes.SHA256()),  # Mask generation function based on SHA-256
+            mgf=padding.MGF1(
+                hashes.SHA256()
+            ),  # Mask generation function based on SHA-256
             salt_length=padding.PSS.MAX_LENGTH,  # Maximum salt length
         ),
         hashes.SHA256(),
@@ -34,7 +36,9 @@ def verify_signature(data_str: str, signature: str, public_key_file_path: str):
             base64.b64decode(signature),
             data_str.encode("utf-8"),
             padding.PSS(
-                mgf=padding.MGF1(hashes.SHA256()),  # Mask generation function based on SHA-256
+                mgf=padding.MGF1(
+                    hashes.SHA256()
+                ),  # Mask generation function based on SHA-256
                 salt_length=padding.PSS.MAX_LENGTH,  # Maximum salt length
             ),
             hashes.SHA256(),

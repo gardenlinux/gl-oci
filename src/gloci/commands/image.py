@@ -9,13 +9,18 @@ from gloci.oras.registry import GlociRegistry
 
 from typing import Optional
 
+
 @click.group()
 def image():
     """Manage images"""
     pass
 
 
-def setup_registry(container_name: str, private_key: Optional[str] = None, public_key: Optional[str] = None):
+def setup_registry(
+    container_name: str,
+    private_key: Optional[str] = None,
+    public_key: Optional[str] = None,
+):
     username = os.getenv("GLOCI_REGISTRY_USERNAME")
     token = os.getenv("GLOCI_REGISTRY_TOKEN")
     if username is None:
@@ -46,7 +51,9 @@ def setup_registry(container_name: str, private_key: Optional[str] = None, publi
     type=click.Path(),
     help="Target Image CPU Architecture",
 )
-@click.option("--cname", required=True, type=click.Path(), help="Canonical Name of Image")
+@click.option(
+    "--cname", required=True, type=click.Path(), help="Canonical Name of Image"
+)
 @click.option("--version", required=True, type=click.Path(), help="Version of Image")
 @click.option(
     "--info_yaml",
@@ -70,9 +77,13 @@ def setup_registry(container_name: str, private_key: Optional[str] = None, publi
     default="cert/oci-sign.crt",
     show_default=True,
 )
-def push(container_name, architecture, cname, version, info_yaml, private_key, public_key):
+def push(
+    container_name, architecture, cname, version, info_yaml, private_key, public_key
+):
     container_name = f"{container_name}:{version}"
-    registry = setup_registry(container_name, private_key=private_key, public_key=public_key)
+    registry = setup_registry(
+        container_name, private_key=private_key, public_key=public_key
+    )
     registry.push_image_manifest(architecture, cname, version, info_yaml)
     click.echo(f"Pushed {container_name}")
 
@@ -87,14 +98,18 @@ def push(container_name, architecture, cname, version, info_yaml, private_key, p
 )
 @click.option("--cname", required=True, type=click.Path(), help="cname of target image")
 @click.option("--version", required=True, type=click.Path(), help="Version of Image")
-@click.option("--architecture", required=True, type=click.Path(), help="architecture of image")
+@click.option(
+    "--architecture", required=True, type=click.Path(), help="architecture of image"
+)
 @click.option(
     "--file_path",
     required=True,
     type=click.Path(),
     help="file to attach to the manifest",
 )
-@click.option("--media_type", required=True, type=click.Path(), help="mediatype of file")
+@click.option(
+    "--media_type", required=True, type=click.Path(), help="mediatype of file"
+)
 @click.option(
     "--private_key",
     required=False,
@@ -136,7 +151,9 @@ def remove():
 
 
 @image.command()
-@click.option("--container", "container_name", required=True, help="oci image reference")
+@click.option(
+    "--container", "container_name", required=True, help="oci image reference"
+)
 @click.option("--version", required=True, type=click.Path(), help="Version of Image")
 def status(container_name, version):
     """Get status of image"""
@@ -146,7 +163,9 @@ def status(container_name, version):
 
 
 @image.command()
-@click.option("--container", "container_name", required=True, help="oci image reference")
+@click.option(
+    "--container", "container_name", required=True, help="oci image reference"
+)
 @click.option("--cname", required=True, help="cname of image")
 @click.option("--version", required=True, type=click.Path(), help="Version of Image")
 @click.option("--architecture", required=True, help="architecture of image")
@@ -172,7 +191,9 @@ def inspect(container_name, cname, version, architecture, public_key):
 
 
 @image.command()
-@click.option("--container", "container_name", required=True, help="oci image reference")
+@click.option(
+    "--container", "container_name", required=True, help="oci image reference"
+)
 @click.option("--version", required=True, type=click.Path(), help="Version of Image")
 @click.option(
     "--public_key",
