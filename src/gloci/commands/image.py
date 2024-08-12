@@ -11,13 +11,16 @@ from typing import Optional
 
 
 @click.group()
-@click.option('--insecure', default=True, is_flag=True, help='Allow insecure connections')
+@click.option(
+    "--insecure", default=True, is_flag=True, help="Allow insecure connections"
+)
 @click.pass_context
 def image(ctx, insecure):
     """Manage images"""
     ctx.ensure_object(dict)
 
-    ctx.obj['insecure'] = insecure
+    ctx.obj["insecure"] = insecure
+
 
 def setup_registry(
     container_name: str,
@@ -83,12 +86,22 @@ def setup_registry(
     show_default=True,
 )
 @click.pass_context
-def push(ctx, 
-    container_name, architecture, cname, version, info_yaml, private_key, public_key
+def push(
+    ctx,
+    container_name,
+    architecture,
+    cname,
+    version,
+    info_yaml,
+    private_key,
+    public_key,
 ):
     container_name = f"{container_name}:{version}"
     registry = setup_registry(
-        container_name, insecure=ctx.obj['insecure'], private_key=private_key, public_key=public_key
+        container_name,
+        insecure=ctx.obj["insecure"],
+        private_key=private_key,
+        public_key=public_key,
     )
     registry.push_image_manifest(architecture, cname, version, info_yaml)
     click.echo(f"Pushed {container_name}")
@@ -146,7 +159,12 @@ def attach(
 ):
     """Attach data to an existing image manifest"""
     container_name = f"{container_name}:{version}"
-    registry = setup_registry(container_name, insecure=ctx.obj['insecure'], private_key=private_key, public_key=public_key)
+    registry = setup_registry(
+        container_name,
+        insecure=ctx.obj["insecure"],
+        private_key=private_key,
+        public_key=public_key,
+    )
 
     registry.attach_layer(cname, version, architecture, file_path, media_type)
 
@@ -167,7 +185,7 @@ def remove():
 def status(ctx, container_name, version):
     """Get status of image"""
     container_name = f"{container_name}:{version}"
-    registry = setup_registry(container_name, insecure=ctx.obj['insecure'])
+    registry = setup_registry(container_name, insecure=ctx.obj["insecure"])
     registry.status_all()
 
 
@@ -191,7 +209,9 @@ def inspect(ctx, container_name, cname, version, architecture, public_key):
     """inspect container"""
     container_name = f"{container_name}:{version}"
     container = oras.container.Container(container_name)
-    registry = setup_registry(container_name, insecure=ctx.obj['insecure'], public_key=public_key)
+    registry = setup_registry(
+        container_name, insecure=ctx.obj["insecure"], public_key=public_key
+    )
     print(
         json.dumps(
             registry.get_manifest_by_cname(container, cname, version, architecture),
@@ -217,7 +237,9 @@ def inspect(ctx, container_name, cname, version, architecture, public_key):
 def inspect_index(ctx, container_name, version, public_key):
     """inspects complete index"""
     container_name = f"{container_name}:{version}"
-    registry = setup_registry(container_name, insecure=ctx.obj['insecure'], public_key=public_key)
+    registry = setup_registry(
+        container_name, insecure=ctx.obj["insecure"], public_key=public_key
+    )
     print(json.dumps(registry.get_index(), indent=4))
 
 
