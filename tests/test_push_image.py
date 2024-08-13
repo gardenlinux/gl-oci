@@ -1,37 +1,18 @@
 import subprocess
 from dotenv import load_dotenv
-import shlex
 import pytest
 from click.testing import CliRunner
 from gloci.cli import cli
-
-
+from .helper import spawn_background_process
 ZOT_CONFIG_FILE = "./zot/config.json"
 CONTAINER_NAME_ZOT_EXAMPLE = "localhost:8081/examplecontainer2"
 
 
-def spawn_background_process(command):
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    return process
 
-
-def call_command(cmd):
-    try:
-        args = shlex.split(cmd)
-        result = subprocess.run(
-            args, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        output = result.stdout.decode("utf-8")
-        return output
-
-    except subprocess.CalledProcessError as e:
-        error_message = e.stderr.decode("utf-8")
-        return f"An error occurred: {error_message}"
-
-
-@pytest.fixture
 def setup_test_environment():
+    print("Spawning zot registry")
     zot_process = spawn_background_process(f"zot serve {ZOT_CONFIG_FILE}")
+
 
     yield zot_process
 
@@ -73,11 +54,9 @@ def test_push_example(info_yaml_path, version, cname, arch):
         ],
     )
     if result.exit_code != 0:
-        # Print the output and error message for debugging
         print(f"Exit Code: {result.exit_code}")
         print(f"Output: {result.output}")
         print(
             f"Error: {result.stderr}"
-        )  # If stderr was captured (can also be in result.output)
-
+        )
     assert result.exit_code == 0

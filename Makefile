@@ -11,6 +11,9 @@ ifneq (,$(wildcard ./.env))
     export
 endif
 
+gencert:
+	./cert/gencert.sh
+
 serve-oci:
 	zot serve $(ZOT_CONFIG_FILE)
 
@@ -29,7 +32,7 @@ install_deps: ## Install dependencies.
 	$(VENV)/bin/pip install -r requirements.txt
 
 
-example-%:
+example-%: gencert
 	@echo "==== DEMO ===="
 	@echo "=== Inspect oci-index"
 	$(PYTHON) -m gloci.cli image inspect-index --container $(CONTAINER_NAME_$@) --version $(CONTAINER_IMAGE_VERSION)

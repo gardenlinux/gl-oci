@@ -1,4 +1,3 @@
-cert
 output
 cert/
 token.sh
@@ -9,3 +8,4 @@ example.manifest.json
 .idea
 dist
 foobar.json
+tests/__pycache__/
