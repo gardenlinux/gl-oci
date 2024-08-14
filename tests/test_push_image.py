@@ -1,28 +1,48 @@
-import subprocess
 from dotenv import load_dotenv
 import pytest
-import time
+import tempfile
 from click.testing import CliRunner
 from gloci.cli import cli
 from .helper import spawn_background_process
 import os
 import shutil
+import json
 
 CONTAINER_NAME_ZOT_EXAMPLE = "localhost:8081/examplecontainer2"
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-ZOT_CONFIG_FILE = f"{ROOT_DIR}/../zot/config.json"
+
+def write_zot_config(config_dict, file_path):
+    with open(file_path, 'w') as config_file:
+        json.dump(config_dict, config_file, indent=4)
 
 
 @pytest.fixture(autouse=True)
 def setup_test_environment():
-    print(f"Spawning zot registry with config {ZOT_CONFIG_FILE}")
-    zot_process = spawn_background_process(f"zot serve {ZOT_CONFIG_FILE}")
+    zot_config = {
+        "distSpecVersion": "1.1.0",
+        "storage": {
+            "rootDirectory": "output/registry/zot"
+        },
+        "http": {
+            "address": "127.0.0.1",
+            "port": "8081"
+        },
+        "log": {
+            "level": "warn"
+        }
+    }
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as temp_config_file:
+        write_zot_config(zot_config, temp_config_file.name)
+        zot_config_file_path = temp_config_file.name
+    print(f"Spawning zot registry with config {zot_config_file_path}")
+    zot_process = spawn_background_process(f"zot serve {zot_config_file_path}")
 
     yield zot_process
 
     if os.path.isdir("./output"):
         shutil.rmtree("./output")
-
+    if os.path.isfile(zot_config_file_path):
+        os.remove(zot_config_file_path)
 
 @pytest.mark.parametrize(
     "info_yaml_path, version, cname, arch",
