@@ -1,4 +1,6 @@
 import subprocess
+import threading
+import queue
 import io
 from dotenv import load_dotenv
 import pytest
@@ -17,6 +19,14 @@ def write_zot_config(config_dict, file_path):
     with open(file_path, "w") as config_file:
         json.dump(config_dict, config_file, indent=4)
 
+def enqueue_output(pipe, queue):
+    """Reads lines from the subprocess' pipe and enqueues them."""
+    try:
+        for line in iter(pipe.readline, b''):
+            queue.put(line)
+    finally:
+        pipe.close()
+
 
 @pytest.fixture(autouse=True)
 def setup_test_environment():
@@ -26,27 +36,37 @@ def setup_test_environment():
         "http": {"address": "127.0.0.1", "port": "18081"},
         "log": {"level": "warn"},
     }
+    stdout_queue = queue.Queue()
+    stderr_queue = queue.Queue()
+
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as temp_config_file:
         write_zot_config(zot_config, temp_config_file.name)
         zot_config_file_path = temp_config_file.name
     print(f"Spawning zot registry with config {zot_config_file_path}")
     zot_process = spawn_background_process(
-        f"zot serve {zot_config_file_path}", stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        f"zot serve {zot_config_file_path}",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
     )
+
+    stdout_thread = threading.Thread(target=enqueue_output, args=(zot_process.stdout, stdout_queue))
+    stderr_thread = threading.Thread(target=enqueue_output, args=(zot_process.stderr, stderr_queue))
+    stdout_thread.start()
+    stderr_thread.start()
 
     yield zot_process
 
     if zot_process.stdout:
         print("Zot stdout:")
-        for line in io.TextIOWrapper(zot_process.stdout, encoding="utf-8"): 
+        for line in io.TextIOWrapper(zot_process.stdout, encoding="utf-8"):
             print(line)
     else:
         print("Not capture any zot stdout")
 
     if zot_process.stderr:
         print("Zot stderr:")
-        for line in io.TextIOWrapper(zot_process.stderr, encoding="utf-8"): 
+        for line in io.TextIOWrapper(zot_process.stderr, encoding="utf-8"):
             print(line)
     else:
         print("Not capture any zot stderr")
