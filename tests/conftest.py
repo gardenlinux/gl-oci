@@ -1,6 +1,5 @@
 from .helper import call_command
 import os
-import shutil
 
 
 def pytest_sessionstart(session):
@@ -12,6 +11,3 @@ def pytest_sessionfinish(session):
         os.remove("./cert/oci-sign.crt")
     if os.path.isfile("./cert/oci-sign.key"):
         os.remove("./cert/oci-sign.key")
-
-    if os.path.isdir("./output"):
-        shutil.rmtree("./output")

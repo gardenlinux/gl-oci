@@ -6,6 +6,7 @@ from click.testing import CliRunner
 from gloci.cli import cli
 from .helper import spawn_background_process
 import os
+import shutil
 
 CONTAINER_NAME_ZOT_EXAMPLE = "localhost:8081/examplecontainer2"
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -19,7 +20,10 @@ def setup_test_environment():
 
     yield zot_process
 
-@pytest.mark.serial
+    if os.path.isdir("./output"):
+        shutil.rmtree("./output")
+
+
 @pytest.mark.parametrize(
     "info_yaml_path, version, cname, arch",
     [
