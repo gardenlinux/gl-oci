@@ -12,20 +12,13 @@ ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 ZOT_CONFIG_FILE = f"{ROOT_DIR}/../zot/config.json"
 
 
-@pytest.fixture()
+@pytest.fixture(autouse=True)
 def setup_test_environment():
     print("Spawning zot registry")
     zot_process = spawn_background_process(f"zot serve {ZOT_CONFIG_FILE}")
     time.sleep(3)
 
     yield zot_process
-
-    zot_process.terminate()
-    try:
-        zot_process.wait(timeout=10)
-    except subprocess.TimeoutExpired:
-        zot_process.kill()
-        zot_process.wait()
 
 
 @pytest.mark.parametrize(

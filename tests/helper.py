@@ -2,14 +2,14 @@ import subprocess
 import shlex
 
 import os
+
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 ZOT_CONFIG_FILE = f"/zot/config.json"
 
-def spawn_background_process(cmd):
+
+def spawn_background_process(cmd, stdout=None, stderr=None):
     args = shlex.split(cmd)
-    process = subprocess.Popen(
-        args, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
+    process = subprocess.Popen(args, shell=False, stdout=stdout, stderr=stderr)
     return process
 
 

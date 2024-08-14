@@ -1,4 +1,3 @@
-from os.path import isdir
 from .helper import call_command
 import os
 import shutil
