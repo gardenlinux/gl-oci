@@ -39,6 +39,10 @@ def setup_test_environment():
 
     yield zot_process
 
+    out, err = zot_process.communicate()
+    print(out)
+    print(err)
+
     if os.path.isdir("./output"):
         shutil.rmtree("./output")
     if os.path.isfile(zot_config_file_path):
@@ -76,5 +80,8 @@ def test_push_example(info_yaml_path, version, cname, arch):
     if result.exit_code != 0:
         print(f"Exit Code: {result.exit_code}")
         print(f"Output: {result.output}")
-        print(f"Output: {result.stderr}")
+        try:
+            print(f"Output: {result.stderr}")
+        except ValueError:
+            print("No stderr captured.")
     assert result.exit_code == 0
