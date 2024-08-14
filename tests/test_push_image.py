@@ -8,7 +8,7 @@ import os
 import shutil
 import json
 
-CONTAINER_NAME_ZOT_EXAMPLE = "localhost:8081/examplecontainer2"
+CONTAINER_NAME_ZOT_EXAMPLE = "localhost:18081/examplecontainer2"
 
 def write_zot_config(config_dict, file_path):
     with open(file_path, 'w') as config_file:
@@ -24,7 +24,7 @@ def setup_test_environment():
         },
         "http": {
             "address": "127.0.0.1",
-            "port": "8081"
+            "port": "18081"
         },
         "log": {
             "level": "warn"
