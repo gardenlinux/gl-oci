@@ -1,18 +1,22 @@
 import subprocess
 from dotenv import load_dotenv
 import pytest
+import time
 from click.testing import CliRunner
 from gloci.cli import cli
 from .helper import spawn_background_process
-ZOT_CONFIG_FILE = "./zot/config.json"
+import os
+
 CONTAINER_NAME_ZOT_EXAMPLE = "localhost:8081/examplecontainer2"
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+ZOT_CONFIG_FILE = f"{ROOT_DIR}/../zot/config.json"
 
 
-
+@pytest.fixture()
 def setup_test_environment():
     print("Spawning zot registry")
     zot_process = spawn_background_process(f"zot serve {ZOT_CONFIG_FILE}")
-
+    time.sleep(3)
 
     yield zot_process
 
@@ -56,7 +60,4 @@ def test_push_example(info_yaml_path, version, cname, arch):
     if result.exit_code != 0:
         print(f"Exit Code: {result.exit_code}")
         print(f"Output: {result.output}")
-        print(
-            f"Error: {result.stderr}"
-        )
     assert result.exit_code == 0
