@@ -15,7 +15,7 @@ ZOT_CONFIG_FILE = f"{ROOT_DIR}/../zot/config.json"
 
 @pytest.fixture(autouse=True)
 def setup_test_environment():
-    print("Spawning zot registry")
+    print(f"Spawning zot registry with config {ZOT_CONFIG_FILE}")
     zot_process = spawn_background_process(f"zot serve {ZOT_CONFIG_FILE}")
 
     yield zot_process
