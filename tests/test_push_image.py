@@ -16,11 +16,10 @@ ZOT_CONFIG_FILE = f"{ROOT_DIR}/../zot/config.json"
 def setup_test_environment():
     print("Spawning zot registry")
     zot_process = spawn_background_process(f"zot serve {ZOT_CONFIG_FILE}")
-    time.sleep(5)
 
     yield zot_process
 
-
+@pytest.mark.serial
 @pytest.mark.parametrize(
     "info_yaml_path, version, cname, arch",
     [
