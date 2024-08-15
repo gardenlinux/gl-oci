@@ -41,6 +41,8 @@ def test_push_example(info_yaml_path, version, cname, arch):
     if result.exit_code != 0:
         print(f"Exit Code: {result.exit_code}")
         print(f"Output: {result.output}")
+        if result.exception:
+            print(result.exception)
         try:
             print(f"Output: {result.stderr}")
         except ValueError:
