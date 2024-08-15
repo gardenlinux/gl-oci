@@ -21,7 +21,6 @@ def write_zot_config(config_dict, file_path):
         json.dump(config_dict, config_file, indent=4)
 
 
-@pytest.fixture(autouse=True)
 def setup_test_environment():
     zot_config = {
         "distSpecVersion": "1.1.0",
