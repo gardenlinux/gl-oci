@@ -8,6 +8,7 @@ import sys
 import uuid
 from enum import Enum, auto
 from typing import Optional, Tuple
+from parse_features_lib.parse_features import read_feature_files
 
 import jsonschema
 import oras.auth

@@ -1,0 +1,36 @@
+name: pytests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+      - name: Install dependencies
+        run: poetry install
+      - name: Install Zot (OCI Registry)
+        run: |
+          sudo wget -O /usr/bin/zot https://github.com/project-zot/zot/releases/download/v2.1.0/zot-linux-amd64
+          sudo chmod +x /usr/bin/zot
+          sudo chown root:root /usr/bin/zot
+      - name: Run tests with pytest
+        run: |
+          export GLOCI_REGISTRY_USERNAME="gardenlinux"
+          export GLOCI_REGISTRY_TOKEN="invalid"
+          poetry run pytest
+
