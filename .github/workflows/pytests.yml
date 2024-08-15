@@ -29,5 +29,8 @@ jobs:
           sudo chmod +x /usr/bin/zot
           sudo chown root:root /usr/bin/zot
       - name: Run tests with pytest
-        run: poetry run pytest
+        run: |
+          export GLOCI_REGISTRY_USERNAME="gardenlinux"
+          export GLOCI_REGISTRY_TOKEN="invalid"
+          poetry run pytest
 

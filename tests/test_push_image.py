@@ -1,9 +1,10 @@
-import subprocess
-import io
 from dotenv import load_dotenv
 import pytest
 from click.testing import CliRunner
 from gloci.cli import cli
+from oras.container import Container as OrasContainer
+from gloci.oras.registry import GlociRegistry
+from gloci.commands.image import setup_registry
 
 CONTAINER_NAME_ZOT_EXAMPLE = "127.0.0.1:18081/examplecontainer2"
 
@@ -19,6 +20,30 @@ CONTAINER_NAME_ZOT_EXAMPLE = "127.0.0.1:18081/examplecontainer2"
     ],
 )
 def test_push_example(info_yaml_path, version, cname, arch):
+    
+    container_name = f"{CONTAINER_NAME_ZOT_EXAMPLE}:{version}"
+    registry = setup_registry(
+        container_name,
+        insecure=True,
+        private_key="cert/oci-sign.key",
+        public_key="cert/oci-sign.crt",
+    )
+    registry.push_image_manifest(architecture, cname, version, info_yaml)
+    click.echo(f"Pushed {container_name}")
+
+
+
+@pytest.mark.usefixtures('zot_session')
+@pytest.mark.parametrize(
+    "info_yaml_path, version, cname, arch",
+    [
+        ("example-data/info_1.yaml", "today", "yolo-example_dev", "arm64"),
+        ("example-data/info_1.yaml", "today", "yolo-example_dev", "amd64"),
+        ("example-data/info_2.yaml", "today", "yolo-example_dev", "arm64"),
+        ("example-data/info_2.yaml", "today", "yolo-example_dev", "amd64"),
+    ],
+)
+def test_push_example_cli(info_yaml_path, version, cname, arch):
     load_dotenv()
     runner = CliRunner()
     result = runner.invoke(
