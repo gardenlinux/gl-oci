@@ -535,7 +535,7 @@ class GlociRegistry(Registry):
         with open(info_yaml, "r") as f:
             info_data = yaml.safe_load(f)
             base_path = os.path.join(os.path.dirname(info_yaml))
-        
+
         manifest_image = oras.oci.NewManifest()
         total_size = 0
 

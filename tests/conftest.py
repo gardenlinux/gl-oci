@@ -7,9 +7,11 @@ import shutil
 import json
 import pytest
 
+
 def write_zot_config(config_dict, file_path):
     with open(file_path, "w") as config_file:
         json.dump(config_dict, config_file, indent=4)
+
 
 @pytest.fixture(autouse=False, scope="function")
 def zot_session():

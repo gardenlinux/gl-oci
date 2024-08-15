@@ -9,7 +9,7 @@ from gloci.commands.image import setup_registry
 CONTAINER_NAME_ZOT_EXAMPLE = "127.0.0.1:18081/examplecontainer2"
 
 
-@pytest.mark.usefixtures('zot_session')
+@pytest.mark.usefixtures("zot_session")
 @pytest.mark.parametrize(
     "info_yaml_path, version, cname, arch",
     [
@@ -20,7 +20,7 @@ CONTAINER_NAME_ZOT_EXAMPLE = "127.0.0.1:18081/examplecontainer2"
     ],
 )
 def test_push_example(info_yaml_path, version, cname, arch):
-    
+
     container_name = f"{CONTAINER_NAME_ZOT_EXAMPLE}:{version}"
     registry = setup_registry(
         container_name,
@@ -28,12 +28,10 @@ def test_push_example(info_yaml_path, version, cname, arch):
         private_key="cert/oci-sign.key",
         public_key="cert/oci-sign.crt",
     )
-    registry.push_image_manifest(architecture, cname, version, info_yaml)
-    click.echo(f"Pushed {container_name}")
+    registry.push_image_manifest(arch, cname, version, info_yaml_path)
 
 
-
-@pytest.mark.usefixtures('zot_session')
+@pytest.mark.usefixtures("zot_session")
 @pytest.mark.parametrize(
     "info_yaml_path, version, cname, arch",
     [
