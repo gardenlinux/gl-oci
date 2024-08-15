@@ -2,14 +2,11 @@ from dotenv import load_dotenv
 import pytest
 from click.testing import CliRunner
 from gloci.cli import cli
-from oras.container import Container as OrasContainer
-from gloci.oras.registry import GlociRegistry
 from gloci.commands.image import setup_registry
 
 CONTAINER_NAME_ZOT_EXAMPLE = "127.0.0.1:18081/examplecontainer2"
 
 
-@pytest.mark.usefixtures("zot_session")
 @pytest.mark.parametrize(
     "info_yaml_path, version, cname, arch",
     [
