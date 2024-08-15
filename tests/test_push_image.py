@@ -1,6 +1,4 @@
 import subprocess
-import threading
-import queue
 import io
 from dotenv import load_dotenv
 import pytest
@@ -11,6 +9,9 @@ from .helper import spawn_background_process
 import os
 import shutil
 import json
+import queue
+import threading
+import sys
 
 CONTAINER_NAME_ZOT_EXAMPLE = "localhost:18081/examplecontainer2"
 
@@ -19,13 +20,11 @@ def write_zot_config(config_dict, file_path):
     with open(file_path, "w") as config_file:
         json.dump(config_dict, config_file, indent=4)
 
-def enqueue_output(pipe, queue):
-    """Reads lines from the subprocess' pipe and enqueues them."""
-    try:
-        for line in iter(pipe.readline, b''):
-            queue.put(line)
-    finally:
-        pipe.close()
+
+def enqueue_output(file, queue):
+    for line in iter(file.readline, ""):
+        queue.put(line)
+    file.close()
 
 
 @pytest.fixture(autouse=True)
@@ -36,9 +35,6 @@ def setup_test_environment():
         "http": {"address": "127.0.0.1", "port": "18081"},
         "log": {"level": "warn"},
     }
-    stdout_queue = queue.Queue()
-    stderr_queue = queue.Queue()
-
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as temp_config_file:
         write_zot_config(zot_config, temp_config_file.name)
@@ -46,14 +42,9 @@ def setup_test_environment():
     print(f"Spawning zot registry with config {zot_config_file_path}")
     zot_process = spawn_background_process(
         f"zot serve {zot_config_file_path}",
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stdout=sys.stdout,
+        stderr=sys.stderr,
     )
-
-    stdout_thread = threading.Thread(target=enqueue_output, args=(zot_process.stdout, stdout_queue))
-    stderr_thread = threading.Thread(target=enqueue_output, args=(zot_process.stderr, stderr_queue))
-    stdout_thread.start()
-    stderr_thread.start()
 
     yield zot_process
 

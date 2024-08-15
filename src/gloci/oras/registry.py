@@ -8,6 +8,7 @@ import sys
 import uuid
 from enum import Enum, auto
 from typing import Optional, Tuple
+from parse_features_lib.parse_features import read_feature_files
 
 import jsonschema
 import oras.auth
@@ -534,7 +535,8 @@ class GlociRegistry(Registry):
         with open(info_yaml, "r") as f:
             info_data = yaml.safe_load(f)
             base_path = os.path.join(os.path.dirname(info_yaml))
-
+        
+        features = read_feature_files("./features") 
         manifest_image = oras.oci.NewManifest()
         total_size = 0
 
