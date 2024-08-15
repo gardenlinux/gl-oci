@@ -20,14 +20,6 @@ def write_zot_config(config_dict, file_path):
     with open(file_path, "w") as config_file:
         json.dump(config_dict, config_file, indent=4)
 
-
-def enqueue_output(file, queue):
-    for line in iter(file.readline, ""):
-        queue.put(line)
-    file.close()
-
-
-@pytest.fixture(autouse=True)
 def setup_test_environment():
     zot_config = {
         "distSpecVersion": "1.1.0",

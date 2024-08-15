@@ -28,6 +28,8 @@ jobs:
           sudo wget -O /usr/bin/zot https://github.com/project-zot/zot/releases/download/v2.1.0/zot-linux-amd64
           sudo chmod +x /usr/bin/zot
           sudo chown root:root /usr/bin/zot
+      - name: serve zot
+        run: zot serve zot/config.json
       - name: Run tests with pytest
         run: poetry run pytest
 
