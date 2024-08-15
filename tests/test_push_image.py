@@ -37,6 +37,7 @@ def test_push_example(info_yaml_path, version, cname, arch):
             "--info_yaml",
             info_yaml_path,
         ],
+        catch_exceptions=False,
     )
     if result.exit_code != 0:
         print(f"Exit Code: {result.exit_code}")
