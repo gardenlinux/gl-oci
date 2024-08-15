@@ -13,7 +13,7 @@ import queue
 import threading
 import sys
 
-CONTAINER_NAME_ZOT_EXAMPLE = "localhost:18081/examplecontainer2"
+CONTAINER_NAME_ZOT_EXAMPLE = "127.0.0.1:18081/examplecontainer2"
 
 
 def write_zot_config(config_dict, file_path):
