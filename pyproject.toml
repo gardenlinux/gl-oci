@@ -18,6 +18,7 @@ oras = { git  = "https://github.com/oras-project/oras-py.git", rev="caf8db5b2793
 parse_features_lib = { git  = "https://github.com/gardenlinux/parse_features_lib", rev="main" }
 #oras = "^0.1.30"
 cryptography = "^43.0.0"
+sphinx-rtd-theme = "^2.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"

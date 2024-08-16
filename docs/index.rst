@@ -5,13 +5,7 @@
 
 gloci documentation
 ================================
-.. automodule:: gloci.oras.registry
-    :members:
-.. automodule:: gloci.oras.defaults
-    :members:
-.. automodule:: gloci.oras.schemas
-    :members:
-.. automodule:: gloci.oras.crypto
+.. automodule:: gloci.oras
     :members:
 .. toctree::
    :maxdepth: 2
@@ -22,4 +16,5 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
 
