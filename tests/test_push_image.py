@@ -39,7 +39,6 @@ def test_push_example(info_yaml_path, version, cname, arch):
     ],
 )
 def test_push_example_cli(info_yaml_path, version, cname, arch):
-    load_dotenv()
     runner = CliRunner()
     result = runner.invoke(
         cli,
