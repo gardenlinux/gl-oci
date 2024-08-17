@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>gloci &mdash; gloci  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            gloci
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">gloci</a></li>
+<li><a class="reference internal" href="#module-gloci.cli">gloci.cli</a></li>
+<li><a class="reference internal" href="#module-gloci.oras">gloci.oras</a></li>
+<li><a class="reference internal" href="#module-gloci.oras.registry">gloci.oras.registry</a><ul>
+<li><a class="reference internal" href="#gloci.oras.registry.GlociRegistry"><code class="docutils literal notranslate"><span class="pre">GlociRegistry</span></code></a><ul>
+<li><a class="reference internal" href="#gloci.oras.registry.GlociRegistry.attach_layer"><code class="docutils literal notranslate"><span class="pre">GlociRegistry.attach_layer()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.registry.GlociRegistry.change_state"><code class="docutils literal notranslate"><span class="pre">GlociRegistry.change_state()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.registry.GlociRegistry.create_layer"><code class="docutils literal notranslate"><span class="pre">GlociRegistry.create_layer()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.registry.GlociRegistry.get_digest"><code class="docutils literal notranslate"><span class="pre">GlociRegistry.get_digest()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.registry.GlociRegistry.get_index"><code class="docutils literal notranslate"><span class="pre">GlociRegistry.get_index()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.registry.GlociRegistry.get_manifest_by_cname"><code class="docutils literal notranslate"><span class="pre">GlociRegistry.get_manifest_by_cname()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.registry.GlociRegistry.get_manifest_by_digest"><code class="docutils literal notranslate"><span class="pre">GlociRegistry.get_manifest_by_digest()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.registry.GlociRegistry.get_manifest_json"><code class="docutils literal notranslate"><span class="pre">GlociRegistry.get_manifest_json()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.registry.GlociRegistry.get_manifest_meta_data_by_cname"><code class="docutils literal notranslate"><span class="pre">GlociRegistry.get_manifest_meta_data_by_cname()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.registry.GlociRegistry.get_manifest_size"><code class="docutils literal notranslate"><span class="pre">GlociRegistry.get_manifest_size()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.registry.GlociRegistry.push_image_manifest"><code class="docutils literal notranslate"><span class="pre">GlociRegistry.push_image_manifest()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.registry.GlociRegistry.remove_container"><code class="docutils literal notranslate"><span class="pre">GlociRegistry.remove_container()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.registry.GlociRegistry.sign_layer"><code class="docutils literal notranslate"><span class="pre">GlociRegistry.sign_layer()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.registry.GlociRegistry.sign_manifest_entry"><code class="docutils literal notranslate"><span class="pre">GlociRegistry.sign_manifest_entry()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.registry.GlociRegistry.status_all"><code class="docutils literal notranslate"><span class="pre">GlociRegistry.status_all()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.registry.GlociRegistry.update_index"><code class="docutils literal notranslate"><span class="pre">GlociRegistry.update_index()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.registry.GlociRegistry.upload_index"><code class="docutils literal notranslate"><span class="pre">GlociRegistry.upload_index()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.registry.GlociRegistry.verify_manifest_meta_signature"><code class="docutils literal notranslate"><span class="pre">GlociRegistry.verify_manifest_meta_signature()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.registry.GlociRegistry.verify_manifest_signature"><code class="docutils literal notranslate"><span class="pre">GlociRegistry.verify_manifest_signature()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#gloci.oras.registry.ManifestState"><code class="docutils literal notranslate"><span class="pre">ManifestState</span></code></a><ul>
+<li><a class="reference internal" href="#gloci.oras.registry.ManifestState.Complete"><code class="docutils literal notranslate"><span class="pre">ManifestState.Complete</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.registry.ManifestState.Final"><code class="docutils literal notranslate"><span class="pre">ManifestState.Final</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.registry.ManifestState.Incomplete"><code class="docutils literal notranslate"><span class="pre">ManifestState.Incomplete</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#gloci.oras.registry.NewIndex"><code class="docutils literal notranslate"><span class="pre">NewIndex()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.registry.NewManifestMetadata"><code class="docutils literal notranslate"><span class="pre">NewManifestMetadata()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.registry.NewPlatform"><code class="docutils literal notranslate"><span class="pre">NewPlatform()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.registry.attach_state"><code class="docutils literal notranslate"><span class="pre">attach_state()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.registry.construct_layer_signed_data_string"><code class="docutils literal notranslate"><span class="pre">construct_layer_signed_data_string()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.registry.construct_manifest_entry_signed_data_string"><code class="docutils literal notranslate"><span class="pre">construct_manifest_entry_signed_data_string()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.registry.create_config_from_dict"><code class="docutils literal notranslate"><span class="pre">create_config_from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.registry.get_image_state"><code class="docutils literal notranslate"><span class="pre">get_image_state()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-gloci.oras.crypto">gloci.oras.crypto</a><ul>
+<li><a class="reference internal" href="#gloci.oras.crypto.calculate_sha256"><code class="docutils literal notranslate"><span class="pre">calculate_sha256()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.crypto.sign_data"><code class="docutils literal notranslate"><span class="pre">sign_data()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.crypto.verify_sha256"><code class="docutils literal notranslate"><span class="pre">verify_sha256()</span></code></a></li>
+<li><a class="reference internal" href="#gloci.oras.crypto.verify_signature"><code class="docutils literal notranslate"><span class="pre">verify_signature()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-gloci.commands">gloci.commands</a></li>
+<li><a class="reference internal" href="#module-gloci.commands.image">gloci.commands.image</a><ul>
+<li><a class="reference internal" href="#gloci.commands.image.setup_registry"><code class="docutils literal notranslate"><span class="pre">setup_registry()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-gloci.commands.ocm">gloci.commands.ocm</a></li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">gloci</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">gloci</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/modules.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-gloci">
+<span id="gloci"></span><h1>gloci<a class="headerlink" href="#module-gloci" title="Link to this heading"></a></h1>
+</section>
+<section id="module-gloci.cli">
+<span id="gloci-cli"></span><h1>gloci.cli<a class="headerlink" href="#module-gloci.cli" title="Link to this heading"></a></h1>
+</section>
+<section id="module-gloci.oras">
+<span id="gloci-oras"></span><h1>gloci.oras<a class="headerlink" href="#module-gloci.oras" title="Link to this heading"></a></h1>
+</section>
+<section id="module-gloci.oras.registry">
+<span id="gloci-oras-registry"></span><h1>gloci.oras.registry<a class="headerlink" href="#module-gloci.oras.registry" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="gloci.oras.registry.GlociRegistry">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gloci.oras.registry.</span></span><span class="sig-name descname"><span class="pre">GlociRegistry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">container_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">token</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">insecure</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">private_key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">public_key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gloci.oras.registry.GlociRegistry" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Registry</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="gloci.oras.registry.GlociRegistry.attach_layer">
+<span class="sig-name descname"><span class="pre">attach_layer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">architecture</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">media_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gloci.oras.registry.GlociRegistry.attach_layer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gloci.oras.registry.GlociRegistry.change_state">
+<span class="sig-name descname"><span class="pre">change_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">architecture</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gloci.oras.registry.GlociRegistry.change_state" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gloci.oras.registry.GlociRegistry.create_layer">
+<span class="sig-name descname"><span class="pre">create_layer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">architecture</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">media_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gloci.oras.registry.GlociRegistry.create_layer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gloci.oras.registry.GlociRegistry.get_digest">
+<span class="sig-name descname"><span class="pre">get_digest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gloci.oras.registry.GlociRegistry.get_digest" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gloci.oras.registry.GlociRegistry.get_index">
+<span class="sig-name descname"><span class="pre">get_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">allowed_media_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gloci.oras.registry.GlociRegistry.get_index" title="Link to this definition"></a></dt>
+<dd><p>Returns the manifest for a cname+arch combination of a container
+Will return None if no result was found</p>
+<p>TODO: refactor: use get_manifest_json and call it with index mediatype.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gloci.oras.registry.GlociRegistry.get_manifest_by_cname">
+<span class="sig-name descname"><span class="pre">get_manifest_by_cname</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gloci.oras.registry.GlociRegistry.get_manifest_by_cname" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gloci.oras.registry.GlociRegistry.get_manifest_by_digest">
+<span class="sig-name descname"><span class="pre">get_manifest_by_digest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gloci.oras.registry.GlociRegistry.get_manifest_by_digest" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gloci.oras.registry.GlociRegistry.get_manifest_json">
+<span class="sig-name descname"><span class="pre">get_manifest_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gloci.oras.registry.GlociRegistry.get_manifest_json" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gloci.oras.registry.GlociRegistry.get_manifest_meta_data_by_cname">
+<span class="sig-name descname"><span class="pre">get_manifest_meta_data_by_cname</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gloci.oras.registry.GlociRegistry.get_manifest_meta_data_by_cname" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gloci.oras.registry.GlociRegistry.get_manifest_size">
+<span class="sig-name descname"><span class="pre">get_manifest_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gloci.oras.registry.GlociRegistry.get_manifest_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gloci.oras.registry.GlociRegistry.push_image_manifest">
+<span class="sig-name descname"><span class="pre">push_image_manifest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">architecture</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info_yaml</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gloci.oras.registry.GlociRegistry.push_image_manifest" title="Link to this definition"></a></dt>
+<dd><p>creates and pushes an image manifest</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gloci.oras.registry.GlociRegistry.remove_container">
+<span class="sig-name descname"><span class="pre">remove_container</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gloci.oras.registry.GlociRegistry.remove_container" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gloci.oras.registry.GlociRegistry.sign_layer">
+<span class="sig-name descname"><span class="pre">sign_layer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">architecture</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">checksum_sha256</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">media_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gloci.oras.registry.GlociRegistry.sign_layer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gloci.oras.registry.GlociRegistry.sign_manifest_entry">
+<span class="sig-name descname"><span class="pre">sign_manifest_entry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_manifest_metadata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">architecture</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gloci.oras.registry.GlociRegistry.sign_manifest_entry" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gloci.oras.registry.GlociRegistry.status_all">
+<span class="sig-name descname"><span class="pre">status_all</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gloci.oras.registry.GlociRegistry.status_all" title="Link to this definition"></a></dt>
+<dd><p>Validate if container is valid
+- all manifests require a info.yaml in the layers
+- info.yaml needs to be signed (TODO)
+- all layers listed in info.yaml must exist
+- all mediatypes of layers listed in info.yaml must be set correctly</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gloci.oras.registry.GlociRegistry.update_index">
+<span class="sig-name descname"><span class="pre">update_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">old_digest</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manifest_meta_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gloci.oras.registry.GlociRegistry.update_index" title="Link to this definition"></a></dt>
+<dd><p>replaces an old manifest entry with a new manifest entry</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gloci.oras.registry.GlociRegistry.upload_index">
+<span class="sig-name descname"><span class="pre">upload_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Response</span></span></span><a class="headerlink" href="#gloci.oras.registry.GlociRegistry.upload_index" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gloci.oras.registry.GlociRegistry.verify_manifest_meta_signature">
+<span class="sig-name descname"><span class="pre">verify_manifest_meta_signature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manifest_meta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gloci.oras.registry.GlociRegistry.verify_manifest_meta_signature" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gloci.oras.registry.GlociRegistry.verify_manifest_signature">
+<span class="sig-name descname"><span class="pre">verify_manifest_signature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manifest</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gloci.oras.registry.GlociRegistry.verify_manifest_signature" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gloci.oras.registry.ManifestState">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gloci.oras.registry.</span></span><span class="sig-name descname"><span class="pre">ManifestState</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gloci.oras.registry.ManifestState" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
+<p>An enumeration.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gloci.oras.registry.ManifestState.Complete">
+<span class="sig-name descname"><span class="pre">Complete</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#gloci.oras.registry.ManifestState.Complete" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gloci.oras.registry.ManifestState.Final">
+<span class="sig-name descname"><span class="pre">Final</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#gloci.oras.registry.ManifestState.Final" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gloci.oras.registry.ManifestState.Incomplete">
+<span class="sig-name descname"><span class="pre">Incomplete</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#gloci.oras.registry.ManifestState.Incomplete" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gloci.oras.registry.NewIndex">
+<span class="sig-prename descclassname"><span class="pre">gloci.oras.registry.</span></span><span class="sig-name descname"><span class="pre">NewIndex</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#gloci.oras.registry.NewIndex" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gloci.oras.registry.NewManifestMetadata">
+<span class="sig-prename descclassname"><span class="pre">gloci.oras.registry.</span></span><span class="sig-name descname"><span class="pre">NewManifestMetadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">digest</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">annotaions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">platform_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#gloci.oras.registry.NewManifestMetadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gloci.oras.registry.NewPlatform">
+<span class="sig-prename descclassname"><span class="pre">gloci.oras.registry.</span></span><span class="sig-name descname"><span class="pre">NewPlatform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">architecture</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#gloci.oras.registry.NewPlatform" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gloci.oras.registry.attach_state">
+<span class="sig-prename descclassname"><span class="pre">gloci.oras.registry.</span></span><span class="sig-name descname"><span class="pre">attach_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gloci.oras.registry.attach_state" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gloci.oras.registry.construct_layer_signed_data_string">
+<span class="sig-prename descclassname"><span class="pre">gloci.oras.registry.</span></span><span class="sig-name descname"><span class="pre">construct_layer_signed_data_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">architecture</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">media_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">checksum_sha256</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#gloci.oras.registry.construct_layer_signed_data_string" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gloci.oras.registry.construct_manifest_entry_signed_data_string">
+<span class="sig-prename descclassname"><span class="pre">gloci.oras.registry.</span></span><span class="sig-name descname"><span class="pre">construct_manifest_entry_signed_data_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_manifest_metadata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">architecture</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#gloci.oras.registry.construct_manifest_entry_signed_data_string" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gloci.oras.registry.create_config_from_dict">
+<span class="sig-prename descclassname"><span class="pre">gloci.oras.registry.</span></span><span class="sig-name descname"><span class="pre">create_config_from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">annotations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gloci.oras.registry.create_config_from_dict" title="Link to this definition"></a></dt>
+<dd><p>Write a new OCI configuration to file, and generate oci meta data for it
+For reference see <a class="reference external" href="https://github.com/opencontainers/image-spec/blob/main/config.md">https://github.com/opencontainers/image-spec/blob/main/config.md</a>
+annotations, mediatrype, size, digest are not part of digest and size calculation,
+and therefore must be attached to the output dict and not written to the file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>conf</strong> – dict with custom configuration (the payload of the configuration)</p></li>
+<li><p><strong>annotations</strong> – dict with custom annotations to be attached to metadata part of config</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gloci.oras.registry.get_image_state">
+<span class="sig-prename descclassname"><span class="pre">gloci.oras.registry.</span></span><span class="sig-name descname"><span class="pre">get_image_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manifest</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#gloci.oras.registry.get_image_state" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-gloci.oras.crypto">
+<span id="gloci-oras-crypto"></span><h1>gloci.oras.crypto<a class="headerlink" href="#module-gloci.oras.crypto" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="gloci.oras.crypto.calculate_sha256">
+<span class="sig-prename descclassname"><span class="pre">gloci.oras.crypto.</span></span><span class="sig-name descname"><span class="pre">calculate_sha256</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#gloci.oras.crypto.calculate_sha256" title="Link to this definition"></a></dt>
+<dd><p>Calculate the SHA256 checksum of a file.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gloci.oras.crypto.sign_data">
+<span class="sig-prename descclassname"><span class="pre">gloci.oras.crypto.</span></span><span class="sig-name descname"><span class="pre">sign_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_str</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">private_key_file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#gloci.oras.crypto.sign_data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gloci.oras.crypto.verify_sha256">
+<span class="sig-prename descclassname"><span class="pre">gloci.oras.crypto.</span></span><span class="sig-name descname"><span class="pre">verify_sha256</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">checksum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bytes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gloci.oras.crypto.verify_sha256" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gloci.oras.crypto.verify_signature">
+<span class="sig-prename descclassname"><span class="pre">gloci.oras.crypto.</span></span><span class="sig-name descname"><span class="pre">verify_signature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_str</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">signature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">public_key_file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gloci.oras.crypto.verify_signature" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-gloci.commands">
+<span id="gloci-commands"></span><h1>gloci.commands<a class="headerlink" href="#module-gloci.commands" title="Link to this heading"></a></h1>
+</section>
+<section id="module-gloci.commands.image">
+<span id="gloci-commands-image"></span><h1>gloci.commands.image<a class="headerlink" href="#module-gloci.commands.image" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="gloci.commands.image.setup_registry">
+<span class="sig-prename descclassname"><span class="pre">gloci.commands.image.</span></span><span class="sig-name descname"><span class="pre">setup_registry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">container_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">private_key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">insecure</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">public_key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gloci.commands.image.setup_registry" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-gloci.commands.ocm">
+<span id="gloci-commands-ocm"></span><h1>gloci.commands.ocm<a class="headerlink" href="#module-gloci.commands.ocm" title="Link to this heading"></a></h1>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, gardenlinux maintainer.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
